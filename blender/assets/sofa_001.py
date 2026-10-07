@@ -64,8 +64,8 @@ def build_sofa(location=(0, 0, 0), name_prefix="Sofa001"):
 
     # Soft arms: superellipsoid geometry produces continuously curved corners
     # instead of bevel bands.
-    for side, x in (("L", -1.035), ("R", 1.035)):
-        soft(f"Arm_{side}", (x, 0.015, 0.515), (0.19, 0.91, 0.56), linen, 5.6, 4.6)
+    for side, x in (("L", -0.99), ("R", 0.99)):
+        soft(f"Arm_{side}", (x, 0.015, 0.515), (0.18, 0.91, 0.56), linen, 5.6, 4.6)
 
     seat_specs = [
         ("L", -0.48, math.radians(0.45)),
@@ -88,8 +88,8 @@ def build_sofa(location=(0, 0, 0), name_prefix="Sofa001"):
     for side, x, rz in seat_specs:
         soft(
             f"BackCushion_{side}",
-            (x, 0.235, 0.735),
-            (0.89, 0.205, 0.51),
+            (x, 0.235, 0.680),
+            (0.89, 0.205, 0.43),
             linen,
             4.7,
             3.2,
@@ -102,7 +102,7 @@ def build_sofa(location=(0, 0, 0), name_prefix="Sofa001"):
         for sy in (-0.27, 0.27):
             box(
                 f"Leg_{'L' if sx < 0 else 'R'}_{'F' if sy < 0 else 'B'}",
-                (sx, sy, 0.075),
+                (sx, sy, 0.080),
                 (0.085, 0.085, 0.15),
                 wood,
                 0.012,
@@ -114,6 +114,6 @@ def build_sofa(location=(0, 0, 0), name_prefix="Sofa001"):
         "name": "sofa-001",
         "version": "0.2",
         "front_axis": "-Y",
-        "nominal_dimensions_m": [2.16, 0.93, 0.86],
+        "nominal_dimensions_m": [2.16, 0.91, 0.91],
         "objects": objects,
     }
