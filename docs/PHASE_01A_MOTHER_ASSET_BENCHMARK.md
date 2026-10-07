@@ -1,6 +1,6 @@
 # Phase 01A — Mother Asset Benchmark
 
-Status: **CANDIDATE — MANUAL VISUAL ACCEPTANCE REQUIRED**
+Status: **PARTIAL ACCEPTANCE — SOFA ACCEPTED / HYBRID BED CANDIDATE**
 Date: 2026-10-07
 
 ## Scope
@@ -72,3 +72,25 @@ Phase 01A v0.2 passes automated build and asset-contract validation.
 - Bed floor offset: 0.000 m
 
 The v0.2 soft geometry is materially better than the initial rounded-box prototype. Automated PASS does not seal visual quality; user visual acceptance remains required before expanding the benchmark family.
+
+
+## Hybrid Bed candidate
+
+The original generator-first Bed 001 demonstrated the pipeline but did not meet the visual bar. The current candidate is the Hybrid Bed workflow in `scenes/hybrid_bed_probe/`.
+
+Current candidate characteristics:
+
+- parametric hard bed structure;
+- authored/simulated Blender Cloth duvet shell;
+- separate duvet loft volume;
+- 3 mm visible fabric shell;
+- normalized CC0 sleeping-pillow topology;
+- CC0 Rough Linen roughness / normal source with pinned provenance;
+- deterministic UV0 suitable for GLB;
+- runtime GLB material/texture validation.
+
+Automated status: **PASS**.
+
+Visual status: **CANDIDATE — user acceptance required**.
+
+Sofa 001 has received user visual acceptance and may be treated as the first accepted mother-asset direction.
