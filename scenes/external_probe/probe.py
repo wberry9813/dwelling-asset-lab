@@ -31,6 +31,22 @@ mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 if not mesh_objects:
     raise RuntimeError("External asset contains no mesh objects")
 
+source_mesh_object_count = len(mesh_objects)
+
+# Split disconnected geometry islands into separate objects. Many production
+# assets are exported as a single object even when cushions, quilt and frame
+# are not topologically connected.
+for obj in list(mesh_objects):
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.separate(type="LOOSE")
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+
 points = []
 for obj in mesh_objects:
     for corner in obj.bound_box:
@@ -42,12 +58,25 @@ center = Vector([(mins[i] + maxs[i]) / 2 for i in range(3)])
 
 objects = []
 for o in mesh_objects:
+    obj_points = [o.matrix_world @ Vector(corner) for corner in o.bound_box]
+    obj_mins = [min(p[i] for p in obj_points) for i in range(3)]
+    obj_maxs = [max(p[i] for p in obj_points) for i in range(3)]
+    obj_size = [obj_maxs[i] - obj_mins[i] for i in range(3)]
+    obj_center = [(obj_mins[i] + obj_maxs[i]) / 2 for i in range(3)]
     objects.append({
         "name": o.name,
         "vertices": len(o.data.vertices),
         "polygons": len(o.data.polygons),
         "materials": [slot.material.name if slot.material else None for slot in o.material_slots],
+        "bounds": {
+            "min": [round(v, 4) for v in obj_mins],
+            "max": [round(v, 4) for v in obj_maxs],
+            "size": [round(v, 4) for v in obj_size],
+            "center": [round(v, 4) for v in obj_center],
+        },
     })
+
+objects.sort(key=lambda item: item["polygons"], reverse=True)
 
 materials = [{"name": m.name, "useNodes": bool(m.use_nodes)} for m in bpy.data.materials]
 
@@ -124,7 +153,8 @@ bpy.ops.render.render(write_still=True)
 report = {
     "source": metadata,
     "blenderVersion": bpy.app.version_string,
-    "meshObjects": len(mesh_objects),
+    "sourceMeshObjects": source_mesh_object_count,
+    "loosePartObjects": len(mesh_objects),
     "materialsBeforeClayOverride": materials,
     "bounds": {
         "min": [round(v, 4) for v in mins],
@@ -136,6 +166,6 @@ report = {
 (OUT / "probe-report.json").write_text(json.dumps(report, indent=2))
 print(json.dumps({
     "asset": metadata["assetId"],
-    "meshObjects": len(mesh_objects),
+    "loosePartObjects": len(mesh_objects),
     "bounds": report["bounds"],
 }, indent=2))
