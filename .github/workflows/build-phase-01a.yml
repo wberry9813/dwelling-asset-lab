@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "blender/**"
+      - "blender/common.py"
+      - "blender/assets/sofa_001.py"
+      - "blender/assets/bed_001.py"
       - "scenes/review_vignette/**"
       - "assets/manifests/sofa-001.json"
       - "assets/manifests/bed-001.json"
