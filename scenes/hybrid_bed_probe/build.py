@@ -94,13 +94,33 @@ for obj in parts:
     bpy.data.objects.remove(obj, do_unlink=True)
 
 # Dedicated CC0 accent-pillow topology.
+# Track pre-existing meshes so cleanup never removes the already-approved
+# sleeping-pillow copies.
+existing_mesh_names = {o.name for o in scene.objects if o.type == "MESH"}
+
 with bpy.data.libraries.load(str(pillow_source_path), link=False) as (src, dst):
     dst.objects = list(src.objects)
 for obj in dst.objects:
     if obj is not None:
         bpy.context.collection.objects.link(obj)
 
-accent_parts = [o for o in scene.objects if o.type == "MESH"]
+accent_seed_parts = [
+    o for o in scene.objects
+    if o.type == "MESH" and o.name not in existing_mesh_names
+]
+for obj in list(accent_seed_parts):
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.separate(type="LOOSE")
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+accent_parts = [
+    o for o in scene.objects
+    if o.type == "MESH" and o.name not in existing_mesh_names
+]
 for p in accent_parts:
     recenter_origin(p)
 
