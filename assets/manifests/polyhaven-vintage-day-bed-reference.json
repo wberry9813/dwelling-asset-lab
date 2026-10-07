@@ -1,0 +1,21 @@
+{
+  "id": "polyhaven-vintage-day-bed-reference",
+  "sourceType": "external-normalized",
+  "source": "https://polyhaven.com/a/vintage_day_bed",
+  "frontAxis": "-Y",
+  "nominalDimensionsMeters": [1.0, 1.0, 1.0],
+  "purpose": "Quality reference only: bedding drape, pillow detail, material breakup; not a Dwelling style target",
+  "license": {
+    "geometry": "CC0 / Poly Haven",
+    "externalMaterials": [
+      {
+        "provider": "Poly Haven",
+        "asset": "vintage_day_bed",
+        "license": "CC0"
+      }
+    ]
+  },
+  "export": {
+    "runtime": "none"
+  }
+}
