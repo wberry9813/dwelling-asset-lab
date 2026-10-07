@@ -219,24 +219,34 @@ for obj in (mattress, duvet_loft):
         if hasattr(obj.collision, "thickness_outer"):
             obj.collision.thickness_outer = 0.006
 
-def ensure_uv(obj, method="smart"):
+def ensure_uv(obj):
     if obj.type != "MESH":
         return
-    if obj.data.uv_layers and len(obj.data.uv_layers) > 0:
-        obj.data.uv_layers.active_index = 0
+    mesh = obj.data
+    if mesh.uv_layers and len(mesh.uv_layers) > 0:
+        mesh.uv_layers.active_index = 0
         return
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    if method == "project":
-        bpy.ops.uv.project_from_view(camera_bounds=False, correct_aspect=True, scale_to_bounds=True)
-    else:
-        bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.02)
-    bpy.ops.object.mode_set(mode="OBJECT")
-    if not obj.data.uv_layers:
-        raise RuntimeError(f"Unable to create UV map for {obj.name}")
+
+    # Deterministic planar UV0 for authored surfaces that do not already carry
+    # UVs. This avoids context-sensitive/slow UV operators in headless CI.
+    uv_layer = mesh.uv_layers.new(name="UVMap")
+    xs = [v.co.x for v in mesh.vertices]
+    ys = [v.co.y for v in mesh.vertices]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max(max_x - min_x, 1e-8)
+    span_y = max(max_y - min_y, 1e-8)
+
+    for poly in mesh.polygons:
+        for loop_index in poly.loop_indices:
+            vertex_index = mesh.loops[loop_index].vertex_index
+            co = mesh.vertices[vertex_index].co
+            uv_layer.data[loop_index].uv = (
+                (co.x - min_x) / span_x,
+                (co.y - min_y) / span_y,
+            )
+
+    mesh.uv_layers.active_index = 0
 
 # ---------------------------------------------------------------------------
 # Real Blender Cloth authoring pass.
