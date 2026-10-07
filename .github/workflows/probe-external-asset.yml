@@ -1,0 +1,74 @@
+name: Probe External Asset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/fetch_polyhaven_asset.py"
+      - "scenes/external_probe/**"
+      - ".github/workflows/probe-external-asset.yml"
+  workflow_dispatch:
+    inputs:
+      asset_id:
+        description: Poly Haven asset id
+        required: true
+        default: vintage_day_bed
+        type: string
+
+concurrency:
+  group: external-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BLENDER_VERSION: "5.2.2"
+      BLENDER_DIR: "blender-5.2.2-linux-x64"
+      POLYHAVEN_ASSET_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.asset_id || 'vintage_day_bed' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Poly Haven source
+        run: python3 tools/fetch_polyhaven_asset.py "$POLYHAVEN_ASSET_ID"
+
+      - name: Install headless rendering libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0
+
+      - name: Restore Blender cache
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-linux-x64-${{ env.BLENDER_VERSION }}
+
+      - name: Download Blender 5.2 LTS
+        if: steps.blender-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          tar -xf blender.tar.xz
+
+      - name: Add Blender to PATH
+        run: echo "$PWD/${BLENDER_DIR}" >> "$GITHUB_PATH"
+
+      - name: Probe geometry and render clay review
+        run: |
+          blender --background --python-exit-code 1 --python scenes/external_probe/probe.py
+          test -s build/external_probe/result/probe-report.json
+          test -s build/external_probe/result/probe-clay-3q.png
+          test -s build/external_probe/result/probe-clay-front.png
+
+      - name: Upload probe package
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-probe-${{ env.POLYHAVEN_ASSET_ID }}-${{ github.sha }}
+          path: build/external_probe/
+          retention-days: 7
+          if-no-files-found: error
