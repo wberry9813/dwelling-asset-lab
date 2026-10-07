@@ -1,0 +1,71 @@
+name: Probe Hybrid Bed
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scenes/hybrid_bed_probe/**"
+      - ".github/workflows/probe-hybrid-bed.yml"
+      - "tools/fetch_polyhaven_asset.py"
+  workflow_dispatch:
+
+concurrency:
+  group: hybrid-bed-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BLENDER_VERSION: "5.2.2"
+      BLENDER_DIR: "blender-5.2.2-linux-x64"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch pinned CC0 soft-geometry reference
+        run: |
+          python3 tools/fetch_polyhaven_asset.py vintage_day_bed --out build/hybrid_bed_probe/source
+          echo "799074fbd63aa41f184d72c9d575019597b8a78e450c50733f7f1c79902ee955  build/hybrid_bed_probe/source/vintage_day_bed.blend" | sha256sum -c -
+
+      - name: Install headless rendering libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0
+
+      - name: Restore Blender cache
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-linux-x64-${{ env.BLENDER_VERSION }}
+
+      - name: Download Blender 5.2 LTS
+        if: steps.blender-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          tar -xf blender.tar.xz
+
+      - name: Add Blender to PATH
+        run: echo "$PWD/${BLENDER_DIR}" >> "$GITHUB_PATH"
+
+      - name: Build hybrid bed prototype
+        run: |
+          blender --background --python-exit-code 1 --python scenes/hybrid_bed_probe/build.py
+          test -s build/hybrid_bed_probe/result/hybrid-bed-3q.png
+          test -s build/hybrid_bed_probe/result/hybrid-bed-side.png
+          test -s build/hybrid_bed_probe/result/hybrid-bed-prototype.blend
+          test -s build/hybrid_bed_probe/result/hybrid-bed-prototype.glb
+          test -s build/hybrid_bed_probe/result/hybrid-bed-report.json
+
+      - name: Upload hybrid bed probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-bed-probe-${{ github.sha }}
+          path: build/hybrid_bed_probe/
+          retention-days: 7
+          if-no-files-found: error
