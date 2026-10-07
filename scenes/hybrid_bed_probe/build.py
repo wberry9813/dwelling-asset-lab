@@ -186,7 +186,7 @@ plinth = rounded_box("HybridBed_Plith", (0, 0.02, 0.050), (1.72, 1.84, 0.10), sh
 headboard = rounded_box("HybridBed_HeadboardBack", (0, 0.995, 0.79), (1.98, 0.10, 1.22), oak, 0.040, 5)
 headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0.08, 0.80), headboard_linen, 0.080, 8)
 mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
-sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.88, 0.012), sheet, 0.009, 4)
+sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.558), (1.81, 1.89, 0.004), sheet, 0.0015, 3)
 
 # Filled duvet body: loft comes from volume, while visible fabric remains thin.
 def duvet_loft_deform(x, y, z, a, b, c):
@@ -194,16 +194,16 @@ def duvet_loft_deform(x, y, z, a, b, c):
     ny = y / max(b, 1e-6)
     if z > 0:
         center = max(0.0, 1.0 - nx * nx) * max(0.0, 1.0 - ny * ny)
-        z += 0.020 * center
+        z += 0.014 * center
         # Gentle asymmetry / compression prevents the fill from reading as a slab.
-        z -= 0.013 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
-        z += 0.006 * math.sin(2.7 * x + 0.8) * center
+        z -= 0.018 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
+        z += 0.008 * math.sin(2.7 * x + 0.8) * center
     return x, y, z
 
 duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
-    (0, -0.18, 0.635),
-    (1.68, 1.36, 0.145),
+    (0, -0.18, 0.625),
+    (1.66, 1.32, 0.112),
     duvet_fill,
     n_xy=5.2,
     n_z=3.2,
@@ -256,14 +256,14 @@ bpy.ops.mesh.primitive_grid_add(
     x_subdivisions=53,
     y_subdivisions=61,
     size=2.0,
-    location=(0.0, -0.18, 0.805),
+    location=(0.0, -0.18, 0.765),
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
 ensure_uv(duvet_shell)
 # Intentionally larger than the loft volume so the free edges can drape.
 # Width stays within the 1.98m outer frame contract.
-duvet_shell.scale = (0.955, 0.840, 1.0)
+duvet_shell.scale = (0.945, 0.825, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 # Add a few millimetres of deterministic asymmetry before the solve.
@@ -298,7 +298,7 @@ if hasattr(collision_settings, "self_distance_min"):
     collision_settings.self_distance_min = 0.004
 
 scene.frame_start = 1
-scene.frame_end = 72
+scene.frame_end = 66
 for frame_no in range(scene.frame_start, scene.frame_end + 1):
     scene.frame_set(frame_no)
 
@@ -323,6 +323,30 @@ bpy.ops.object.modifier_apply(modifier=subsurf.name)
 for poly in duvet_shell.data.polygons:
     poly.use_smooth = True
 
+# Folded-back top edge breaks the duvet into readable textile layers instead
+# of one inflated slab. This is authored soft geometry, not simulated thickness.
+def duvet_fold_deform(x, y, z, a, b, c):
+    nx = x / max(a, 1e-6)
+    center = max(0.0, 1.0 - nx * nx)
+    z += 0.010 * math.sin(3.2 * x + 0.35) * center
+    z -= 0.010 * abs(nx) ** 5
+    y += 0.008 * math.sin(4.1 * x - 0.2)
+    return x, y, z
+
+duvet_fold = superellipsoid(
+    "HybridBed_DuvetFoldBack",
+    (0, 0.34, 0.710),
+    (1.58, 0.27, 0.060),
+    duvet_linen,
+    n_xy=5.0,
+    n_z=3.0,
+    segments=72,
+    rings=28,
+    rotation=(math.radians(-3), 0, math.radians(-0.8)),
+    deform=duvet_fold_deform,
+)
+ensure_uv(duvet_fold)
+
 # ---------------------------------------------------------------------------
 # CC0 pillow normalization.
 # ---------------------------------------------------------------------------
@@ -336,27 +360,27 @@ for obj in (pillow_l, pillow_r):
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.70, 0.50, 0.22)
+    obj.dimensions = (0.68, 0.46, 0.17)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.location = loc
     obj.rotation_euler = (
-        math.radians(-6),
+        math.radians(-5),
         math.radians(2 if loc[0] < 0 else -2),
         math.radians(rot_z),
     )
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.38, 0.60, 0.720), -2)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.38, 0.59, 0.725), 2)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.36, 0.61, 0.685), -2)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.60, 0.690), 2)
 
 # Dedicated accent-pillow source was probed successfully, but is intentionally
 # excluded from this bed composition because its crumpled decorative silhouette
 # conflicts with the cleaner Dwelling bedroom direction.
 bpy.data.objects.remove(accent_pillow, do_unlink=True)
 
-for textured_obj in (headboard_pad, sheet_layer, duvet_shell, pillow_l, pillow_r):
+for textured_obj in (headboard_pad, sheet_layer, duvet_shell, duvet_fold, pillow_l, pillow_r):
     ensure_uv(textured_obj)
     if not textured_obj.data.uv_layers:
         raise RuntimeError(f"Textured object missing UV map: {textured_obj.name}")
@@ -416,7 +440,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
-    duvet_loft, duvet_shell, pillow_l, pillow_r,
+    duvet_loft, duvet_shell, duvet_fold, pillow_l, pillow_r,
 ]
 bpy.ops.object.select_all(action="DESELECT")
 for o in bed_objects:
@@ -433,7 +457,7 @@ bpy.ops.export_scene.gltf(
 report = {
     "status": "pass",
     "source": metadata,
-    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + CC0 sleeping-pillow topology + CC0 linen PBR; accent pillow source probed but excluded",
+    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + authored fold-back edge + normalized CC0 sleeping-pillow topology + CC0 linen PBR; accent pillow source probed but excluded",
     "simulation": {
         "frames": scene.frame_end,
         "grid": [53, 61],
