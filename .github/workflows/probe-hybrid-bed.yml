@@ -7,6 +7,7 @@ on:
       - "scenes/hybrid_bed_probe/**"
       - ".github/workflows/probe-hybrid-bed.yml"
       - "tools/fetch_polyhaven_asset.py"
+      - "tools/fetch_polyhaven_texture.py"
   workflow_dispatch:
 
 concurrency:
@@ -27,10 +28,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch pinned CC0 soft-geometry reference
+      - name: Fetch pinned CC0 soft-geometry references
         run: |
           python3 tools/fetch_polyhaven_asset.py vintage_day_bed --out build/hybrid_bed_probe/source
           echo "799074fbd63aa41f184d72c9d575019597b8a78e450c50733f7f1c79902ee955  build/hybrid_bed_probe/source/vintage_day_bed.blend" | sha256sum -c -
+          python3 tools/fetch_polyhaven_asset.py throw_pillows_01 --out build/hybrid_bed_probe/pillow_source
+          echo "bf125def3c0ad1b4dbd26e4c4a73a09a5cfa7640e555d6603738448a06b6b7ca  build/hybrid_bed_probe/pillow_source/throw_pillows_01.blend" | sha256sum -c -
+
+      - name: Fetch CC0 linen PBR
+        run: |
+          python3 tools/fetch_polyhaven_texture.py rough_linen --out build/hybrid_bed_probe/textures
+          test -s build/hybrid_bed_probe/textures/diffuse.jpg || test -s build/hybrid_bed_probe/textures/diffuse.png
+          test -s build/hybrid_bed_probe/textures/normal.jpg || test -s build/hybrid_bed_probe/textures/normal.png
+          test -s build/hybrid_bed_probe/textures/roughness.jpg || test -s build/hybrid_bed_probe/textures/roughness.png
 
       - name: Install headless rendering libraries
         run: |
