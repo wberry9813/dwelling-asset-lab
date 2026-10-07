@@ -82,8 +82,13 @@ if not surface_candidates or not drape_candidates or not pillow_candidates:
         f"surfaces={len(surface_candidates)} drapes={len(drape_candidates)} pillows={len(pillow_candidates)}"
     )
 
-# Use the actual vertically draped quilt island rather than the seat cushion.
-duvet_src = sorted(
+# Treat bedding as two layers: a low-profile loft volume plus a thin draped shell.
+loft_src = sorted(
+    surface_candidates,
+    key=lambda o: len(o.data.polygons),
+    reverse=True,
+)[0]
+shell_src = sorted(
     drape_candidates,
     key=lambda o: len(o.data.polygons),
     reverse=True,
@@ -95,13 +100,18 @@ pillow_src = sorted(
 )[0]
 
 # Snapshot reference metrics before removing the full reference asset.
-duvet_source_polygons = len(duvet_src.data.polygons)
+loft_source_polygons = len(loft_src.data.polygons)
+shell_source_polygons = len(shell_src.data.polygons)
 pillow_source_dimensions = [round(v, 4) for v in size_of(pillow_src)]
 
 # Duplicate selected source geometry before removing the full reference asset.
-duvet = duvet_src.copy()
-duvet.data = duvet_src.data.copy()
-bpy.context.collection.objects.link(duvet)
+duvet_loft = loft_src.copy()
+duvet_loft.data = loft_src.data.copy()
+bpy.context.collection.objects.link(duvet_loft)
+
+duvet_shell = shell_src.copy()
+duvet_shell.data = shell_src.data.copy()
+bpy.context.collection.objects.link(duvet_shell)
 
 pillow_l = pillow_src.copy()
 pillow_l.data = pillow_src.data.copy()
@@ -135,25 +145,35 @@ sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.8
 # Reuse only the CC0 soft geometry, normalized into the modern bed.
 # ---------------------------------------------------------------------------
 
-for obj in (duvet, pillow_l, pillow_r):
+for obj in (duvet_loft, duvet_shell, pillow_l, pillow_r):
     obj.data.materials.clear()
     obj.data.materials.append(linen)
     for poly in obj.data.polygons:
         poly.use_smooth = True
 
-duvet.name = "HybridBed_Duvet_CC0DrapedBase"
-# The source quilt hangs vertically over the day-bed back. Rotate that authored
-# drape into a horizontal bedding orientation, then normalize dimensions.
+# Low-profile inner duvet volume: enough loft to feel filled, not a foam slab.
+duvet_loft.name = "HybridBed_DuvetLoft_CC0Base"
 bpy.ops.object.select_all(action="DESELECT")
-duvet.select_set(True)
-bpy.context.view_layer.objects.active = duvet
-duvet.rotation_euler = (math.radians(90), 0, 0)
-bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-duvet.dimensions = (1.76, 1.42, 0.060)
+duvet_loft.select_set(True)
+bpy.context.view_layer.objects.active = duvet_loft
+duvet_loft.dimensions = (1.73, 1.36, 0.075)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-duvet.select_set(False)
-duvet.location = (0.0, -0.23, 0.630)
-duvet.rotation_euler = (math.radians(0.8), 0, math.radians(-0.6))
+duvet_loft.select_set(False)
+duvet_loft.location = (0.0, -0.25, 0.617)
+duvet_loft.rotation_euler = (math.radians(0.7), 0, math.radians(-0.5))
+
+# Thin external cloth shell: authored drape supplies the irregular edge/folds.
+duvet_shell.name = "HybridBed_DuvetShell_CC0Draped"
+bpy.ops.object.select_all(action="DESELECT")
+duvet_shell.select_set(True)
+bpy.context.view_layer.objects.active = duvet_shell
+duvet_shell.rotation_euler = (math.radians(90), 0, 0)
+bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+duvet_shell.dimensions = (1.78, 1.43, 0.028)
+bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+duvet_shell.select_set(False)
+duvet_shell.location = (0.0, -0.23, 0.665)
+duvet_shell.rotation_euler = (math.radians(0.7), 0, math.radians(-0.5))
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
@@ -225,7 +245,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 # Export only bed objects, not review shell/lights/camera.
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
-    duvet, pillow_l, pillow_r,
+    duvet_loft, duvet_shell, pillow_l, pillow_r,
 ]
 bpy.ops.object.select_all(action="DESELECT")
 for o in bed_objects:
@@ -243,8 +263,9 @@ report = {
     "status": "pass",
     "source": metadata,
     "selectedSoftParts": {
-        "duvetSourcePolygons": duvet_source_polygons,
-        "duvetSourceKind": "Poly Haven draped quilt loose part",
+        "duvetLoftSourcePolygons": loft_source_polygons,
+        "duvetShellSourcePolygons": shell_source_polygons,
+        "duvetConstruction": "CC0 low-profile loft + thin draped shell",
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
     },
     "prototype": {
