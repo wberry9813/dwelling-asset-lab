@@ -396,10 +396,10 @@ bpy.ops.export_scene.gltf(
 report = {
     "status": "pass",
     "source": metadata,
-    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + CC0 sleep/accent pillow topology + CC0 linen PBR",
+    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + CC0 sleeping-pillow topology + CC0 linen PBR; accent pillow source probed but excluded",
     "simulation": {
         "frames": scene.frame_end,
-        "grid": [45, 51],
+        "grid": [53, 61],
         "fabricThicknessMeters": 0.003,
     },
     "selectedSoftParts": {
