@@ -34,6 +34,19 @@ def extension_score(text):
         return 4
     return -1000
 
+def score_diffuse(trail, url):
+    s = (" ".join(trail) + " " + url).lower()
+    ext = extension_score(s)
+    if ext < 0:
+        return ext
+    if not any(k in s for k in ("diffuse", "albedo", "basecolor", "base_color")):
+        return -1000
+    if any(k in s for k in ("preview", "thumb", "thumbnail")):
+        return -1000
+    score = 100 + ext
+    score += 30 if "1k" in s else (15 if "2k" in s else 0)
+    return score
+
 def score_normal(trail, url):
     s = (" ".join(trail) + " " + url).lower()
     ext = extension_score(s)
@@ -103,12 +116,15 @@ def main():
         )
 
     entries = collect_urls(files)
+    diffuse_trail, diffuse_url = choose(entries, score_diffuse, "diffuse")
     normal_trail, normal_url = choose(entries, score_normal, "OpenGL normal")
     rough_trail, rough_url = choose(entries, score_roughness, "roughness")
 
+    diffuse_path = out / ("diffuse" + suffix_for(diffuse_url))
     normal_path = out / ("normal" + suffix_for(normal_url))
     rough_path = out / ("roughness" + suffix_for(rough_url))
 
+    diffuse_sha = download(diffuse_url, diffuse_path)
     normal_sha = download(normal_url, normal_path)
     rough_sha = download(rough_url, rough_path)
 
@@ -120,6 +136,12 @@ def main():
         "license": "CC0",
         "filesHash": files_hash,
         "maps": {
+            "diffuse": {
+                "trail": list(diffuse_trail),
+                "url": diffuse_url,
+                "file": str(diffuse_path),
+                "sha256": diffuse_sha,
+            },
             "normal": {
                 "trail": list(normal_trail),
                 "url": normal_url,
