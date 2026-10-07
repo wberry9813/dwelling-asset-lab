@@ -104,10 +104,10 @@ sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.8
 # Low-profile filled body under the cloth shell.
 duvet_loft = rounded_box(
     "HybridBed_DuvetLoft",
-    (0, -0.23, 0.615),
-    (1.72, 1.38, 0.090),
+    (0, -0.20, 0.610),
+    (1.58, 1.24, 0.080),
     linen,
-    0.075,
+    0.065,
     8,
 )
 
@@ -123,40 +123,45 @@ for obj in (mattress, duvet_loft):
 # ---------------------------------------------------------------------------
 
 bpy.ops.mesh.primitive_grid_add(
-    x_subdivisions=41,
-    y_subdivisions=47,
+    x_subdivisions=45,
+    y_subdivisions=51,
     size=2.0,
-    location=(0.0, -0.23, 0.745),
+    location=(0.0, -0.20, 0.755),
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
-duvet_shell.scale = (0.90, 0.74, 1.0)
+# Intentionally larger than the loft volume so the free edges can drape.
+# Width stays within the 1.98m outer frame contract.
+duvet_shell.scale = (0.965, 0.805, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 # Add a few millimetres of deterministic asymmetry before the solve.
 for v in duvet_shell.data.vertices:
     x, y, z = v.co
-    v.co.z += 0.006 * math.sin(4.2 * x + 1.1) * math.sin(3.5 * y - 0.7)
-    v.co.z += 0.003 * math.sin(8.0 * x - 2.7 * y)
+    # Low-amplitude asymmetry creates natural wrinkle seeds while the larger
+    # free border supplies the actual gravity-driven drape.
+    v.co.z += 0.008 * math.sin(4.0 * x + 1.1) * math.sin(3.2 * y - 0.7)
+    v.co.z += 0.004 * math.sin(7.5 * x - 2.4 * y)
+    v.co.x += 0.004 * math.sin(2.6 * y + 0.9)
 
 duvet_shell.data.materials.append(linen)
 
 cloth_mod = duvet_shell.modifiers.new("Authoring Cloth", "CLOTH")
 settings = cloth_mod.settings
 for attr, value in [
-    ("quality", 6),
-    ("mass", 0.24),
-    ("air_damping", 4.0),
-    ("tension_stiffness", 18.0),
-    ("compression_stiffness", 18.0),
-    ("shear_stiffness", 8.0),
-    ("bending_stiffness", 0.35),
+    ("quality", 7),
+    ("mass", 0.22),
+    ("air_damping", 3.0),
+    ("tension_stiffness", 14.0),
+    ("compression_stiffness", 14.0),
+    ("shear_stiffness", 7.0),
+    ("bending_stiffness", 0.22),
 ]:
     if hasattr(settings, attr):
         setattr(settings, attr, value)
 
 scene.frame_start = 1
-scene.frame_end = 70
+scene.frame_end = 58
 for frame_no in range(scene.frame_start, scene.frame_end + 1):
     scene.frame_set(frame_no)
 
@@ -283,7 +288,7 @@ report = {
     "authoringMethod": "parametric hard structure + Blender Cloth baked shell + CC0 pillow topology",
     "simulation": {
         "frames": scene.frame_end,
-        "grid": [41, 47],
+        "grid": [45, 51],
         "fabricThicknessMeters": 0.003,
     },
     "selectedSoftParts": {
