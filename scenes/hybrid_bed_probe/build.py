@@ -111,17 +111,18 @@ for obj in parts:
 # Dwelling modern hard structure.
 # ---------------------------------------------------------------------------
 
-oak = material("HybridBed Natural Oak", (0.27, 0.15, 0.065), 0.55)
-mattress_mat = material("HybridBed Mattress", (0.73, 0.70, 0.64), 0.94)
-linen = material("HybridBed Linen", (0.54, 0.49, 0.42), 0.97)
-sheet = material("HybridBed Sheet", (0.82, 0.80, 0.75), 0.98)
+oak = material("HybridBed Natural Oak", (0.24, 0.135, 0.060), 0.58)
+mattress_mat = material("HybridBed Mattress", (0.72, 0.69, 0.63), 0.95)
+linen = material("HybridBed Linen", (0.61, 0.57, 0.51), 0.97)
+sheet = material("HybridBed Sheet", (0.84, 0.82, 0.78), 0.98)
 shadow = material("HybridBed Shadow", (0.035, 0.03, 0.028), 0.78)
 
-frame = rounded_box("HybridBed_Frame", (0, 0, 0.23), (1.98, 2.10, 0.28), oak, 0.045, 5)
-plinth = rounded_box("HybridBed_Plith", (0, 0.02, 0.045), (1.70, 1.84, 0.09), shadow, 0.016, 3)
-headboard = rounded_box("HybridBed_Headboard", (0, 0.995, 0.82), (1.98, 0.11, 1.30), oak, 0.045, 5)
-mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.49), (1.84, 1.92, 0.28), mattress_mat, 0.10, 8)
-sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.635), (1.80, 1.88, 0.055), sheet, 0.045, 6)
+frame = rounded_box("HybridBed_Frame", (0, 0, 0.18), (1.98, 2.10, 0.20), oak, 0.040, 5)
+plinth = rounded_box("HybridBed_Plith", (0, 0.02, 0.050), (1.72, 1.84, 0.10), shadow, 0.014, 3)
+headboard = rounded_box("HybridBed_HeadboardBack", (0, 0.995, 0.79), (1.98, 0.10, 1.22), oak, 0.040, 5)
+headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0.08, 0.80), linen, 0.080, 8)
+mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
+sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.558), (1.80, 1.88, 0.020), sheet, 0.016, 5)
 
 # ---------------------------------------------------------------------------
 # Reuse only the CC0 soft geometry, normalized into the modern bed.
@@ -134,17 +135,17 @@ for obj in (duvet, pillow_l, pillow_r):
         poly.use_smooth = True
 
 duvet.name = "HybridBed_Duvet_CC0Base"
-duvet.dimensions = (1.78, 1.56, 0.18)
+duvet.dimensions = (1.76, 1.40, 0.095)
 bpy.context.view_layer.objects.active = duvet
 duvet.select_set(True)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 duvet.select_set(False)
-duvet.location = (0.0, -0.18, 0.775)
-duvet.rotation_euler = (math.radians(1.5), 0, math.radians(-0.7))
+duvet.location = (0.0, -0.25, 0.650)
+duvet.rotation_euler = (math.radians(1.0), 0, math.radians(-0.7))
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.68, 0.44, 0.17)
+    obj.dimensions = (0.70, 0.46, 0.16)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -152,11 +153,8 @@ def setup_pillow(obj, name, loc, rot_z):
     obj.location = loc
     obj.rotation_euler = (math.radians(-8), math.radians(2 if loc[0] < 0 else -2), math.radians(rot_z))
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.40, 0.60, 0.79), -5)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.40, 0.57, 0.80), 5)
-
-# Add a very thin top textile sheet to soften the transition at the duvet edge.
-top_sheet = rounded_box("HybridBed_TopSheetHint", (0, -0.12, 0.69), (1.76, 1.58, 0.025), sheet, 0.020, 5)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.40, 0.59, 0.680), -5)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.40, 0.56, 0.690), 5)
 
 # ---------------------------------------------------------------------------
 # Review lighting.
@@ -214,7 +212,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
 # Export only bed objects, not review shell/lights/camera.
 bed_objects = [
-    frame, plinth, headboard, mattress, sheet_layer, top_sheet,
+    frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
     duvet, pillow_l, pillow_r,
 ]
 bpy.ops.object.select_all(action="DESELECT")
@@ -237,7 +235,7 @@ report = {
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
     },
     "prototype": {
-        "nominalDimensionsMeters": [1.98, 2.10, 1.47],
+        "nominalDimensionsMeters": [1.98, 2.10, 1.40],
         "note": "Experimental CC0 soft-geometry transfer. Not a promoted production asset.",
     },
 }
