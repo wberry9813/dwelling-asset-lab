@@ -13,8 +13,8 @@ This document records which external Blender projects / asset sources are useful
 | Poly Haven | ADOPT | PBR materials, HDRIs, selected CC0 models / quality references | CC0, high quality, public API, no account required for assets |
 | Poly Haven HAT | ADOPT CONCEPTS / PROBE DIRECT USE | Asset QC | Its validation philosophy closely matches Dwelling contracts |
 | Blender Remote Asset Library | ADOPT LATER | Distribution of approved source assets | Static hosting, Blender-native browsing/download |
-| Home Builder 5.2.4 | PROBE NEXT | Cabinets, closets, doors/windows, hard-surface interior modules | Explicit Blender 5.2 compatibility, Linux package, GPL-3.0, purpose-built for home interiors |
-| blender_cad | PROBE | Declarative hard-surface / modular environment generation | Good match for dimensions and code-reviewable hard assets |
+| Home Builder (public GitHub v3.0.7) | REFERENCE ONLY | Interior-system ideas | Public repo/release is old and targets Blender 3.x-era APIs; do not make it a Blender 5.2 CI dependency |
+| blender_cad | REFERENCE ONLY | Declarative hard-surface ideas | Technically interesting, but current public repo has no declared license; do not vendor or depend on it |
 | blender_furniture_builder | REFERENCE | Cabinet construction logic | Useful construction semantics but older Blender baseline |
 | BlenderProc | DEFER | Large scene orchestration / render automation | Strong batch scene tool, but does not improve furniture authoring quality |
 | BlenderKit | DISCOVERY ONLY | Inspiration / selectively licensed assets | Variable asset licensing and service/account dependency are poor release-CI defaults |
@@ -38,7 +38,7 @@ Current quality references:
 - Rough Linen — material reference for upholstery / bedding;
 - Vintage Day Bed — geometry/detail reference for sag, pillow treatment and draped bedding, **not** the desired Dwelling visual style.
 
-## Home Builder 5.2.4
+## Home Builder
 
 Worth a focused technical probe for:
 
@@ -50,7 +50,7 @@ Worth a focused technical probe for:
 
 If its generated topology and Blender 5 headless behavior are acceptable, it can save substantial work on dimension-driven hard-surface families.
 
-5.2.4 adds explicit Blender 5.2 compatibility and ships for Linux, making it suitable for a GitHub Actions compatibility probe.
+The public GitHub repository currently exposes releases only through v3.0.7 and its README describes the Blender 3 migration. A newer commercial/site distribution may exist, but it is not an appropriate reproducible public-CI dependency unless its exact package and license are independently pinned.
 
 It should not be used for sofas, bedding or other hero soft goods.
 
@@ -65,7 +65,7 @@ Potential strengths:
 - code review;
 - Blender-native meshes and modifiers.
 
-Adopt only if it reduces our own generator complexity without forcing a new abstraction onto soft or artistic assets.
+Do not adopt code from the current public repository until a compatible license is explicitly present. Its declarative modeling concepts may still inform our own design.
 
 ## HAT
 
@@ -120,3 +120,18 @@ Priority:
 3. Home Builder 5 headless cabinet probe.
 4. HAT check mapping into Dwelling validator.
 5. Remote Asset Library publication after several assets are accepted.
+
+
+## Hard-surface decision
+
+For Dwelling's first cabinet family, implement a small in-house parametric casework generator instead of adopting an external framework.
+
+Reasons:
+
+- cabinet geometry is simple and dimension-driven;
+- Dwelling needs a strict 600/450/300 mm module language;
+- runtime pivots and semantic parts matter more than general CAD features;
+- avoiding old or ambiguously licensed dependencies keeps public CI deterministic;
+- the generator can still use normal Blender modifiers/materials and authored detail assets.
+
+External projects remain useful references, but the first production hard-surface benchmark should have no mandatory third-party code dependency.
