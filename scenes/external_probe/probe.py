@@ -61,7 +61,12 @@ for o in mesh_objects:
     o.data.materials.append(clay)
 
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE" if bpy.app.version >= (5, 0, 0) else "BLENDER_EEVEE_NEXT"
+scene.render.engine = "BLENDER_WORKBENCH"
+scene.display.shading.light = "STUDIO"
+scene.display.shading.color_type = "MATERIAL"
+scene.display.shading.show_shadows = True
+scene.display.shading.show_cavity = True
+scene.display.shading.cavity_type = "BOTH"
 scene.render.resolution_x = 960
 scene.render.resolution_y = 720
 scene.render.resolution_percentage = 100
