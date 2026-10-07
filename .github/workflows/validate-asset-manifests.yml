@@ -1,0 +1,27 @@
+name: Validate Asset Manifests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "assets/manifests/**"
+      - "tools/validate_asset_manifests.py"
+      - ".github/workflows/validate-asset-manifests.yml"
+  pull_request:
+    paths:
+      - "assets/manifests/**"
+      - "tools/validate_asset_manifests.py"
+      - ".github/workflows/validate-asset-manifests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate manifests
+        run: python3 tools/validate_asset_manifests.py
