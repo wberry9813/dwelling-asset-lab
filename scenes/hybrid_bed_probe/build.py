@@ -194,16 +194,16 @@ def duvet_loft_deform(x, y, z, a, b, c):
     ny = y / max(b, 1e-6)
     if z > 0:
         center = max(0.0, 1.0 - nx * nx) * max(0.0, 1.0 - ny * ny)
-        z += 0.010 * center
+        z += 0.006 * center
         # Gentle asymmetry / compression prevents the fill from reading as a slab.
-        z -= 0.020 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
-        z += 0.008 * math.sin(2.7 * x + 0.8) * center
+        z -= 0.012 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
+        z += 0.005 * math.sin(2.7 * x + 0.8) * center
     return x, y, z
 
 duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
-    (0, -0.27, 0.615),
-    (1.66, 1.18, 0.102),
+    (0, -0.32, 0.602),
+    (1.62, 1.10, 0.074),
     duvet_fill,
     n_xy=5.2,
     n_z=3.2,
@@ -256,14 +256,14 @@ bpy.ops.mesh.primitive_grid_add(
     x_subdivisions=53,
     y_subdivisions=61,
     size=2.0,
-    location=(0.0, -0.26, 0.742),
+    location=(0.0, -0.27, 0.715),
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
 ensure_uv(duvet_shell)
 # Intentionally larger than the loft volume so the free edges can drape.
 # Width stays within the 1.98m outer frame contract.
-duvet_shell.scale = (0.940, 0.700, 1.0)
+duvet_shell.scale = (0.935, 0.670, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 # Add a few millimetres of deterministic asymmetry before the solve.
@@ -444,10 +444,10 @@ report = {
         "headDirection": "+Y",
         "pillowPitchDegreesX": 3.0,
         "pillowCentersY": [0.69, 0.68],
-        "duvetLoftCenterY": -0.27,
-        "duvetLoftDepth": 1.18,
-        "duvetShellCenterY": -0.26,
-        "duvetShellDepth": 1.40,
+        "duvetLoftCenterY": -0.32,
+        "duvetLoftDepth": 1.10,
+        "duvetShellCenterY": -0.27,
+        "duvetShellDepth": 1.34,
         "pillowLandingZoneIntent": "keep the head-side pillow region flatter and lower than the duvet crown"
     },
     "selectedSoftParts": {
