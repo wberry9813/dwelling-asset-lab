@@ -1,0 +1,16 @@
+{
+  "id": "kitchen-base-600",
+  "sourceType": "generator",
+  "source": "blender/assets/kitchen_base_600.py",
+  "authoringBlender": "5.2.2",
+  "frontAxis": "-Y",
+  "nominalDimensionsMeters": [0.60, 0.579, 0.87],
+  "purpose": "Phase 01B hard-surface mother asset benchmark; 600 mm kitchen base cabinet module",
+  "license": {
+    "geometry": "Dwelling",
+    "externalMaterials": []
+  },
+  "export": {
+    "runtime": "glb"
+  }
+}
