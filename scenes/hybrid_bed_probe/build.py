@@ -151,7 +151,7 @@ def make_linen_material(name, tint, normal_strength=0.25, texture_scale=3.5):
     texcoord = nodes.new("ShaderNodeTexCoord")
     mapping = nodes.new("ShaderNodeMapping")
     mapping.inputs["Scale"].default_value = (texture_scale, texture_scale, texture_scale)
-    links.new(texcoord.outputs["Object"], mapping.inputs["Vector"])
+    links.new(texcoord.outputs["UV"], mapping.inputs["Vector"])
 
     # Keep Dwelling's palette authoritative. The scanned roughness/normal maps
     # provide weave and surface response without forcing the scan's color cast.
@@ -177,6 +177,7 @@ oak = material("HybridBed Natural Oak", (0.24, 0.135, 0.060), 0.58)
 mattress_mat = material("HybridBed Mattress", (0.72, 0.69, 0.63), 0.95)
 headboard_linen = make_linen_material("HybridBed Headboard Linen PBR", (0.76, 0.70, 0.62), 0.18, 3.8)
 duvet_linen = make_linen_material("HybridBed Duvet Linen PBR", (0.57, 0.50, 0.42), 0.28, 3.6)
+duvet_fill = material("HybridBed Duvet Fill", (0.56, 0.49, 0.41), 0.92)
 sheet = make_linen_material("HybridBed Sheet PBR", (0.88, 0.85, 0.79), 0.11, 4.2)
 shadow = material("HybridBed Shadow", (0.035, 0.03, 0.028), 0.78)
 
@@ -203,7 +204,7 @@ duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
     (0, -0.18, 0.635),
     (1.68, 1.36, 0.145),
-    duvet_linen,
+    duvet_fill,
     n_xy=5.2,
     n_z=3.2,
     segments=72,
@@ -218,6 +219,25 @@ for obj in (mattress, duvet_loft):
         if hasattr(obj.collision, "thickness_outer"):
             obj.collision.thickness_outer = 0.006
 
+def ensure_uv(obj, method="smart"):
+    if obj.type != "MESH":
+        return
+    if obj.data.uv_layers and len(obj.data.uv_layers) > 0:
+        obj.data.uv_layers.active_index = 0
+        return
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    if method == "project":
+        bpy.ops.uv.project_from_view(camera_bounds=False, correct_aspect=True, scale_to_bounds=True)
+    else:
+        bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.02)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    if not obj.data.uv_layers:
+        raise RuntimeError(f"Unable to create UV map for {obj.name}")
+
 # ---------------------------------------------------------------------------
 # Real Blender Cloth authoring pass.
 # ---------------------------------------------------------------------------
@@ -230,6 +250,7 @@ bpy.ops.mesh.primitive_grid_add(
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
+ensure_uv(duvet_shell)
 # Intentionally larger than the loft volume so the free edges can drape.
 # Width stays within the 1.98m outer frame contract.
 duvet_shell.scale = (0.955, 0.840, 1.0)
@@ -297,6 +318,7 @@ for poly in duvet_shell.data.polygons:
 # ---------------------------------------------------------------------------
 
 for obj in (pillow_l, pillow_r):
+    ensure_uv(obj)
     obj.data.materials.clear()
     obj.data.materials.append(sheet)
     for poly in obj.data.polygons:
@@ -323,6 +345,11 @@ setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.38, 0.59, 0.725), 2)
 # excluded from this bed composition because its crumpled decorative silhouette
 # conflicts with the cleaner Dwelling bedroom direction.
 bpy.data.objects.remove(accent_pillow, do_unlink=True)
+
+for textured_obj in (headboard_pad, sheet_layer, duvet_shell, pillow_l, pillow_r):
+    ensure_uv(textured_obj)
+    if not textured_obj.data.uv_layers:
+        raise RuntimeError(f"Textured object missing UV map: {textured_obj.name}")
 
 # ---------------------------------------------------------------------------
 # Review scene.
