@@ -24,6 +24,9 @@ permissions:
 jobs:
   build-mother-assets:
     runs-on: ubuntu-latest
+    env:
+      BLENDER_VERSION: "5.2.2"
+      BLENDER_DIR: "blender-5.2.2-linux-x64"
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -33,12 +36,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libegl1 libgl1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0
 
-      - name: Download Blender
+      - name: Restore Blender cache
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-linux-x64-${{ env.BLENDER_VERSION }}
+
+      - name: Download Blender 5.2 LTS
+        if: steps.blender-cache.outputs.cache-hit != 'true'
         run: |
-          BLENDER_VERSION=4.3.2
-          curl -L --fail --retry 3             "https://download.blender.org/release/Blender4.3/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
           tar -xf blender.tar.xz
-          echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
+
+      - name: Add Blender to PATH
+        run: echo "$PWD/${BLENDER_DIR}" >> "$GITHUB_PATH"
 
       - name: Build assets and review renders
         run: |
