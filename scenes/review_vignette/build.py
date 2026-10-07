@@ -50,7 +50,7 @@ def setup_review_shell():
 
 def setup_lighting_and_camera():
     scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.render.engine = "BLENDER_EEVEE" if bpy.app.version >= (5, 0, 0) else "BLENDER_EEVEE_NEXT"
     scene.render.resolution_x = 1280
     scene.render.resolution_y = 960
     scene.render.resolution_percentage = 100
