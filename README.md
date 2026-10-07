@@ -42,3 +42,8 @@ See [Phase 01 — Production Direction & Benchmark Strategy](docs/PHASE_01_PRODU
 ### Active benchmark
 
 [Phase 01A — Mother Asset Benchmark](docs/PHASE_01A_MOTHER_ASSET_BENCHMARK.md) builds Sofa 001 and Bed 001 in a shared neutral review vignette.
+
+
+### Quality-first production
+
+See [Quality-First Asset Pipeline](docs/QUALITY_FIRST_PIPELINE.md) for the adopted hybrid authoring model: curated Blender sources, Geometry Nodes / cloth / sculpt where useful, with automated CI validation and export.
