@@ -13,7 +13,7 @@ This document records which external Blender projects / asset sources are useful
 | Poly Haven | ADOPT | PBR materials, HDRIs, selected CC0 models / quality references | CC0, high quality, public API, no account required for assets |
 | Poly Haven HAT | ADOPT CONCEPTS / PROBE DIRECT USE | Asset QC | Its validation philosophy closely matches Dwelling contracts |
 | Blender Remote Asset Library | ADOPT LATER | Distribution of approved source assets | Static hosting, Blender-native browsing/download |
-| Home Builder 5 | PROBE | Cabinets, closets, doors/windows, hard-surface interior modules | Blender 5 compatible and purpose-built for home interiors |
+| Home Builder 5.2.4 | PROBE NEXT | Cabinets, closets, doors/windows, hard-surface interior modules | Explicit Blender 5.2 compatibility, Linux package, GPL-3.0, purpose-built for home interiors |
 | blender_cad | PROBE | Declarative hard-surface / modular environment generation | Good match for dimensions and code-reviewable hard assets |
 | blender_furniture_builder | REFERENCE | Cabinet construction logic | Useful construction semantics but older Blender baseline |
 | BlenderProc | DEFER | Large scene orchestration / render automation | Strong batch scene tool, but does not improve furniture authoring quality |
@@ -38,7 +38,7 @@ Current quality references:
 - Rough Linen — material reference for upholstery / bedding;
 - Vintage Day Bed — geometry/detail reference for sag, pillow treatment and draped bedding, **not** the desired Dwelling visual style.
 
-## Home Builder 5
+## Home Builder 5.2.4
 
 Worth a focused technical probe for:
 
@@ -49,6 +49,8 @@ Worth a focused technical probe for:
 - countertops.
 
 If its generated topology and Blender 5 headless behavior are acceptable, it can save substantial work on dimension-driven hard-surface families.
+
+5.2.4 adds explicit Blender 5.2 compatibility and ships for Linux, making it suitable for a GitHub Actions compatibility probe.
 
 It should not be used for sofas, bedding or other hero soft goods.
 
