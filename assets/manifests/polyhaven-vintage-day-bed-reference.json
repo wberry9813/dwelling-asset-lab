@@ -3,7 +3,11 @@
   "sourceType": "external-normalized",
   "source": "https://polyhaven.com/a/vintage_day_bed",
   "frontAxis": "-Y",
-  "nominalDimensionsMeters": [1.0, 1.0, 1.0],
+  "nominalDimensionsMeters": [
+    1,
+    1,
+    1
+  ],
   "purpose": "Quality reference only: bedding drape, pillow detail, material breakup; not a Dwelling style target",
   "license": {
     "geometry": "CC0 / Poly Haven",
@@ -17,5 +21,12 @@
   },
   "export": {
     "runtime": "none"
+  },
+  "provenance": {
+    "provider": "Poly Haven",
+    "assetId": "vintage_day_bed",
+    "filesHash": "18d7bb12a9c6a6290dae8a32f015167d5d41c29e",
+    "selectedSource": "blend/1k",
+    "sourceSha256": "799074fbd63aa41f184d72c9d575019597b8a78e450c50733f7f1c79902ee955"
   }
 }
