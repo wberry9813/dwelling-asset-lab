@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dwelling Asset Manifest",
+  "type": "object",
+  "required": [
+    "id",
+    "sourceType",
+    "source",
+    "frontAxis",
+    "nominalDimensionsMeters",
+    "license",
+    "export"
+  ],
+  "properties": {
+    "id": {"type": "string"},
+    "sourceType": {
+      "enum": ["generator", "blend", "geometry-nodes", "external-normalized"]
+    },
+    "source": {"type": "string"},
+    "authoringBlender": {"type": "string"},
+    "frontAxis": {"enum": ["-Y", "+Y", "-X", "+X"]},
+    "nominalDimensionsMeters": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"type": "number", "exclusiveMinimum": 0}
+    },
+    "purpose": {"type": "string"},
+    "license": {
+      "type": "object",
+      "required": ["geometry"],
+      "properties": {
+        "geometry": {"type": "string"},
+        "externalMaterials": {"type": "array"}
+      }
+    },
+    "export": {
+      "type": "object",
+      "required": ["runtime"],
+      "properties": {
+        "runtime": {"enum": ["glb", "usdz", "none"]}
+      }
+    }
+  }
+}
