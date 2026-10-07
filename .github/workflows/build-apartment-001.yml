@@ -3,7 +3,13 @@ name: Build Apartment 001
 on:
   push:
     branches: [main]
+    paths:
+      - "scenes/apartment_001/**"
+      - ".github/workflows/build-apartment-001.yml"
   pull_request:
+    paths:
+      - "scenes/apartment_001/**"
+      - ".github/workflows/build-apartment-001.yml"
   workflow_dispatch:
 
 permissions:
