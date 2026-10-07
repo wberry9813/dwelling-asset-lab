@@ -264,3 +264,24 @@ Next version should use:
 8. restrained wrinkles concentrated at compression/contact zones.
 
 The acceptance test is visual: it must stop reading as a cheap low-poly blanket while preserving correct bounds and runtime export.
+
+
+### Dwelling Remote Asset Library
+
+Blender 5.2 introduces remote asset libraries that can be served from static HTTP hosting.
+
+This is a strong future fit for approved Dwelling source assets:
+
+```text
+approved self-contained .blend assets
+        ↓
+CI: blender -b -c asset_listing generate ...
+        ↓
+static hosted library
+        ↓
+Blender Asset Browser on artist / review machines
+```
+
+Use this as a browsing/distribution layer for approved Blender assets, not as an unpinned dependency for release builds.
+
+Authoring sources may keep external dependencies while being edited, but a published remote-library asset must be self-contained according to Blender's remote-library requirements.
