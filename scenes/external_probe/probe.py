@@ -1,0 +1,136 @@
+import bpy
+import json
+import pathlib
+from mathutils import Vector
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+SRC = ROOT / "build" / "external_probe" / "source"
+OUT = ROOT / "build" / "external_probe" / "result"
+OUT.mkdir(parents=True, exist_ok=True)
+
+metadata = json.loads((SRC / "source-metadata.json").read_text())
+source_path = pathlib.Path(metadata["downloadedFile"])
+if not source_path.is_absolute():
+    source_path = ROOT / source_path
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+
+ext = source_path.suffix.lower()
+if ext == ".blend":
+    with bpy.data.libraries.load(str(source_path), link=False) as (src, dst):
+        dst.objects = list(src.objects)
+    for obj in dst.objects:
+        if obj is not None:
+            bpy.context.collection.objects.link(obj)
+elif ext in {".gltf", ".glb"}:
+    bpy.ops.import_scene.gltf(filepath=str(source_path))
+else:
+    raise RuntimeError(f"Unsupported probe source: {source_path}")
+
+mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+if not mesh_objects:
+    raise RuntimeError("External asset contains no mesh objects")
+
+points = []
+for obj in mesh_objects:
+    for corner in obj.bound_box:
+        points.append(obj.matrix_world @ Vector(corner))
+mins = [min(p[i] for p in points) for i in range(3)]
+maxs = [max(p[i] for p in points) for i in range(3)]
+size = [maxs[i] - mins[i] for i in range(3)]
+center = Vector([(mins[i] + maxs[i]) / 2 for i in range(3)])
+
+objects = []
+for o in mesh_objects:
+    objects.append({
+        "name": o.name,
+        "vertices": len(o.data.vertices),
+        "polygons": len(o.data.polygons),
+        "materials": [slot.material.name if slot.material else None for slot in o.material_slots],
+    })
+
+materials = [{"name": m.name, "useNodes": bool(m.use_nodes)} for m in bpy.data.materials]
+
+clay = bpy.data.materials.new("Probe Clay")
+clay.use_nodes = True
+bsdf = clay.node_tree.nodes.get("Principled BSDF")
+bsdf.inputs["Base Color"].default_value = (0.42, 0.38, 0.33, 1.0)
+bsdf.inputs["Roughness"].default_value = 0.78
+for o in mesh_objects:
+    o.data.materials.clear()
+    o.data.materials.append(clay)
+
+scene = bpy.context.scene
+scene.render.engine = "BLENDER_EEVEE" if bpy.app.version >= (5, 0, 0) else "BLENDER_EEVEE_NEXT"
+scene.render.resolution_x = 960
+scene.render.resolution_y = 720
+scene.render.resolution_percentage = 100
+scene.render.image_settings.file_format = "PNG"
+
+world = bpy.data.worlds.new("Probe World")
+scene.world = world
+world.use_nodes = True
+bg = world.node_tree.nodes.get("Background")
+bg.inputs["Color"].default_value = (0.06, 0.05, 0.045, 1.0)
+bg.inputs["Strength"].default_value = 0.25
+
+bpy.ops.mesh.primitive_plane_add(
+    size=max(size[0], size[1]) * 2.2,
+    location=(center.x, center.y, mins[2] - 0.002),
+)
+floor = bpy.context.object
+floor.data.materials.append(clay)
+
+bpy.ops.object.light_add(
+    type="AREA",
+    location=(center.x - size[0]*1.6, center.y - size[1]*1.8, maxs[2] + size[2]*1.8),
+)
+key = bpy.context.object
+key.data.energy = 1050
+key.data.size = max(size[0], size[1]) * 1.8
+key.rotation_euler = (center - key.location).to_track_quat("-Z", "Y").to_euler()
+
+bpy.ops.object.light_add(
+    type="AREA",
+    location=(center.x + size[0]*1.4, center.y - size[1]*0.3, maxs[2] + size[2]*0.8),
+)
+fill = bpy.context.object
+fill.data.energy = 260
+fill.data.size = max(size[0], size[1]) * 1.3
+fill.rotation_euler = (center - fill.location).to_track_quat("-Z", "Y").to_euler()
+
+diag = max(size)
+bpy.ops.object.camera_add(
+    location=(center.x + diag*1.8, center.y - diag*2.0, center.z + diag*1.25)
+)
+cam = bpy.context.object
+scene.camera = cam
+cam.data.lens = 58
+cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
+
+scene.render.filepath = str(OUT / "probe-clay-3q.png")
+bpy.ops.render.render(write_still=True)
+
+cam.location = (center.x, center.y - diag*2.6, center.z + diag*0.35)
+cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
+scene.render.filepath = str(OUT / "probe-clay-front.png")
+bpy.ops.render.render(write_still=True)
+
+report = {
+    "source": metadata,
+    "blenderVersion": bpy.app.version_string,
+    "meshObjects": len(mesh_objects),
+    "materialsBeforeClayOverride": materials,
+    "bounds": {
+        "min": [round(v, 4) for v in mins],
+        "max": [round(v, 4) for v in maxs],
+        "size": [round(v, 4) for v in size],
+    },
+    "objects": objects,
+}
+(OUT / "probe-report.json").write_text(json.dumps(report, indent=2))
+print(json.dumps({
+    "asset": metadata["assetId"],
+    "meshObjects": len(mesh_objects),
+    "bounds": report["bounds"],
+}, indent=2))
