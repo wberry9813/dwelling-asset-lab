@@ -32,3 +32,8 @@ A successful CI build should produce:
 - `validation.json`
 
 Generated binary assets are build artifacts, not committed source files.
+
+
+## Current phase
+
+See [Phase 01 — Production Direction & Benchmark Strategy](docs/PHASE_01_PRODUCTION_DIRECTION.md) for the current production boundary, benchmark strategy, lighting approach and asset sequencing.
