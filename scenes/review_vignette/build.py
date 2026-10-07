@@ -42,9 +42,9 @@ def setup_review_shell():
     wall_mat = material("Review Wall", (0.82, 0.79, 0.72), 0.86)
 
     shell = [
-        rounded_box("Review_Floor", (0, 0, 0.025), (5.2, 4.2, 0.05), floor_mat, 0.008, 2),
-        rounded_box("Review_BackWall", (0, 1.96, 1.35), (5.2, 0.08, 2.7), wall_mat, 0.01, 2),
-        rounded_box("Review_LeftWall", (-2.56, 0.65, 1.35), (0.08, 2.7, 2.7), wall_mat, 0.01, 2),
+        rounded_box("Review_Floor", (0, 0, 0.025), (8.0, 6.0, 0.05), floor_mat, 0.008, 2),
+        rounded_box("Review_BackWall", (0, 2.76, 1.50), (8.0, 0.08, 3.0), wall_mat, 0.01, 2),
+        rounded_box("Review_LeftWall", (-3.96, 0.85, 1.50), (0.08, 3.9, 3.0), wall_mat, 0.01, 2),
     ]
     return shell
 
@@ -60,14 +60,14 @@ def setup_lighting_and_camera():
     scene.world = world
     world.use_nodes = True
     bg = world.node_tree.nodes.get("Background")
-    bg.inputs["Color"].default_value = (0.055, 0.045, 0.038, 1.0)
-    bg.inputs["Strength"].default_value = 0.28
+    bg.inputs["Color"].default_value = (0.12, 0.10, 0.085, 1.0)
+    bg.inputs["Strength"].default_value = 0.18
 
     # Window-like soft key.
     bpy.ops.object.light_add(type="AREA", location=(-3.8, -3.6, 4.7))
     key = bpy.context.object
     key.name = "WarmDaylight_Key"
-    key.data.energy = 1050
+    key.data.energy = 720
     key.data.shape = "RECTANGLE"
     key.data.size = 4.0
     key.data.size_y = 3.0
@@ -78,7 +78,7 @@ def setup_lighting_and_camera():
     bpy.ops.object.light_add(type="AREA", location=(3.4, -1.2, 3.4))
     fill = bpy.context.object
     fill.name = "WarmDaylight_Fill"
-    fill.data.energy = 260
+    fill.data.energy = 140
     fill.data.size = 3.2
     fill.data.color = (0.82, 0.88, 1.0)
     point_at(fill, (0.0, 0.1, 0.7))
@@ -87,7 +87,7 @@ def setup_lighting_and_camera():
     bpy.ops.object.light_add(type="AREA", location=(1.6, 2.2, 2.7))
     rim = bpy.context.object
     rim.name = "WarmDaylight_Practical"
-    rim.data.energy = 130
+    rim.data.energy = 85
     rim.data.size = 1.4
     rim.data.color = (1.0, 0.56, 0.30)
     point_at(rim, (0.0, 0.0, 0.65))
@@ -153,6 +153,7 @@ def build_review(asset_kind):
 
     return {
         "name": asset["name"],
+        "version": asset.get("version", "0.1"),
         "front_axis": asset["front_axis"],
         "nominal_dimensions_m": asset["nominal_dimensions_m"],
         "measured_bounds_m": bounds,
