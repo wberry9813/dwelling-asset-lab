@@ -60,19 +60,19 @@ def score_normal(trail, url):
     return score
 
 def score_roughness(trail, url):
-    # Semantic map identity must come from API keys, not the asset slug.
-    # Example: asset id "rough_linen" appears in every URL and would make a
-    # Diffuse file look like a roughness map if URL text were considered.
-    semantic = " ".join(trail).lower()
-    s = (semantic + " " + url).lower()
+    # Semantic identity comes from exact API map keys. Path fragments such as
+    # "textures/rough_linen_diff_1k.jpg" contain the asset slug and are not
+    # themselves evidence that the file is a roughness map.
+    keys = {str(part).strip().lower() for part in trail}
+    s = (" ".join(trail) + " " + url).lower()
     ext = extension_score(s)
     if ext < 0:
         return ext
-    if "rough" not in semantic:
+    if not ({"rough", "roughness"} & keys):
         return -1000
     score = 100 + ext
     score += 30 if "1k" in s else (15 if "2k" in s else 0)
-    if "arm" in semantic or "ao_rough" in semantic or "ao/rough" in semantic:
+    if {"arm", "ao_rough_metal", "ao_rough"} & keys:
         score -= 60
     return score
 
