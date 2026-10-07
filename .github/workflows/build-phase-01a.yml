@@ -1,0 +1,63 @@
+name: Build Phase 01A Mother Assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "blender/**"
+      - "scenes/review_vignette/**"
+      - ".github/workflows/build-phase-01a.yml"
+  pull_request:
+    paths:
+      - "blender/**"
+      - "scenes/review_vignette/**"
+      - ".github/workflows/build-phase-01a.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mother-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install headless rendering libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0
+
+      - name: Download Blender
+        run: |
+          BLENDER_VERSION=4.3.2
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender4.3/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          tar -xf blender.tar.xz
+          echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
+
+      - name: Build assets and review renders
+        run: |
+          set -o pipefail
+          blender --background --python-exit-code 1 --python scenes/review_vignette/build.py
+          test -s build/phase_01a/sofa-001.blend
+          test -s build/phase_01a/sofa-001.glb
+          test -s build/phase_01a/bed-001.blend
+          test -s build/phase_01a/bed-001.glb
+          test -s build/phase_01a/preview-sofa-001-3q.png
+          test -s build/phase_01a/preview-sofa-001-side.png
+          test -s build/phase_01a/preview-bed-001-3q.png
+          test -s build/phase_01a/preview-bed-001-side.png
+          test -s build/phase_01a/lighting-preset-warm-daylight.json
+          test -s build/phase_01a/validation.json
+
+      - name: Show validation report
+        run: cat build/phase_01a/validation.json
+
+      - name: Upload Phase 01A review package
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-01a-mother-assets-${{ github.sha }}
+          path: build/phase_01a/
+          retention-days: 7
+          if-no-files-found: error
