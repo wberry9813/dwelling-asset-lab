@@ -12,6 +12,10 @@ on:
       - ".github/workflows/build-apartment-001.yml"
   workflow_dispatch:
 
+concurrency:
+  group: apartment-001-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
