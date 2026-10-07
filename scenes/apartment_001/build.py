@@ -115,7 +115,9 @@ scene.render.resolution_y = 960
 scene.render.resolution_percentage = 100
 scene.render.image_settings.file_format = "PNG"
 scene.render.filepath = os.path.join(OUT, "preview-isometric.png")
-scene.world.color = (0.055, 0.045, 0.035)
+world = bpy.data.worlds.new("Dwelling World")
+scene.world = world
+world.color = (0.055, 0.045, 0.035)
 
 # Save source asset.
 blend_path = os.path.join(OUT, "dwelling-apartment-001.blend")
