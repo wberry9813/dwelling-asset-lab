@@ -153,16 +153,9 @@ def make_linen_material(name, tint, normal_strength=0.25, texture_scale=3.5):
     mapping.inputs["Scale"].default_value = (texture_scale, texture_scale, texture_scale)
     links.new(texcoord.outputs["Object"], mapping.inputs["Vector"])
 
-    diffuse = nodes.new("ShaderNodeTexImage")
-    diffuse.image = bpy.data.images.load(str(texture_path("diffuse")), check_existing=True)
-    links.new(mapping.outputs["Vector"], diffuse.inputs["Vector"])
-
-    multiply = nodes.new("ShaderNodeMixRGB")
-    multiply.blend_type = "MULTIPLY"
-    multiply.inputs["Fac"].default_value = 0.72
-    multiply.inputs[2].default_value = (*tint, 1.0)
-    links.new(diffuse.outputs["Color"], multiply.inputs[1])
-    links.new(multiply.outputs["Color"], bsdf.inputs["Base Color"])
+    # Keep Dwelling's palette authoritative. The scanned roughness/normal maps
+    # provide weave and surface response without forcing the scan's color cast.
+    bsdf.inputs["Base Color"].default_value = (*tint, 1.0)
 
     rough = nodes.new("ShaderNodeTexImage")
     rough.image = bpy.data.images.load(str(texture_path("roughness")), check_existing=True)
@@ -182,15 +175,15 @@ def make_linen_material(name, tint, normal_strength=0.25, texture_scale=3.5):
 
 oak = material("HybridBed Natural Oak", (0.24, 0.135, 0.060), 0.58)
 mattress_mat = material("HybridBed Mattress", (0.72, 0.69, 0.63), 0.95)
-linen = make_linen_material("HybridBed Linen PBR", (0.74, 0.69, 0.61), 0.30, 3.6)
-sheet = make_linen_material("HybridBed Sheet PBR", (0.92, 0.90, 0.86), 0.12, 4.2)
-accent_linen = make_linen_material("HybridBed Accent Linen PBR", (0.47, 0.34, 0.25), 0.34, 4.0)
+headboard_linen = make_linen_material("HybridBed Headboard Linen PBR", (0.76, 0.70, 0.62), 0.18, 3.8)
+duvet_linen = make_linen_material("HybridBed Duvet Linen PBR", (0.57, 0.50, 0.42), 0.28, 3.6)
+sheet = make_linen_material("HybridBed Sheet PBR", (0.88, 0.85, 0.79), 0.11, 4.2)
 shadow = material("HybridBed Shadow", (0.035, 0.03, 0.028), 0.78)
 
 frame = rounded_box("HybridBed_Frame", (0, 0, 0.18), (1.98, 2.10, 0.20), oak, 0.040, 5)
 plinth = rounded_box("HybridBed_Plith", (0, 0.02, 0.050), (1.72, 1.84, 0.10), shadow, 0.014, 3)
 headboard = rounded_box("HybridBed_HeadboardBack", (0, 0.995, 0.79), (1.98, 0.10, 1.22), oak, 0.040, 5)
-headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0.08, 0.80), linen, 0.080, 8)
+headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0.08, 0.80), headboard_linen, 0.080, 8)
 mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
 sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.88, 0.012), sheet, 0.009, 4)
 
@@ -210,7 +203,7 @@ duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
     (0, -0.18, 0.635),
     (1.68, 1.36, 0.145),
-    linen,
+    duvet_linen,
     n_xy=5.2,
     n_z=3.2,
     segments=72,
@@ -251,7 +244,7 @@ for v in duvet_shell.data.vertices:
     v.co.z += 0.006 * math.sin(7.5 * x - 2.4 * y)
     v.co.x += 0.006 * math.sin(2.6 * y + 0.9)
 
-duvet_shell.data.materials.append(linen)
+duvet_shell.data.materials.append(duvet_linen)
 
 cloth_mod = duvet_shell.modifiers.new("Authoring Cloth", "CLOTH")
 settings = cloth_mod.settings
@@ -311,37 +304,25 @@ for obj in (pillow_l, pillow_r):
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.72, 0.52, 0.20)
+    obj.dimensions = (0.70, 0.50, 0.22)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.location = loc
     obj.rotation_euler = (
-        math.radians(-8),
+        math.radians(-6),
         math.radians(2 if loc[0] < 0 else -2),
         math.radians(rot_z),
     )
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.39, 0.59, 0.705), -4)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.39, 0.56, 0.715), 4)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.38, 0.60, 0.720), -2)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.38, 0.59, 0.725), 2)
 
-accent_pillow.name = "HybridBed_AccentPillow_CC0"
-accent_pillow.data.materials.clear()
-accent_pillow.data.materials.append(accent_linen)
-for poly in accent_pillow.data.polygons:
-    poly.use_smooth = True
-accent_pillow.dimensions = (0.46, 0.18, 0.42)
-bpy.ops.object.select_all(action="DESELECT")
-accent_pillow.select_set(True)
-bpy.context.view_layer.objects.active = accent_pillow
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-accent_pillow.location = (0.03, 0.43, 0.79)
-accent_pillow.rotation_euler = (
-    math.radians(-10),
-    math.radians(-2),
-    math.radians(7),
-)
+# Dedicated accent-pillow source was probed successfully, but is intentionally
+# excluded from this bed composition because its crumpled decorative silhouette
+# conflicts with the cleaner Dwelling bedroom direction.
+bpy.data.objects.remove(accent_pillow, do_unlink=True)
 
 # ---------------------------------------------------------------------------
 # Review scene.
@@ -398,7 +379,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
-    duvet_loft, duvet_shell, pillow_l, pillow_r, accent_pillow,
+    duvet_loft, duvet_shell, pillow_l, pillow_r,
 ]
 bpy.ops.object.select_all(action="DESELECT")
 for o in bed_objects:
