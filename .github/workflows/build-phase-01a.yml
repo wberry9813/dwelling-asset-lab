@@ -13,6 +13,15 @@ on:
       - "scenes/review_vignette/**"
       - ".github/workflows/build-phase-01a.yml"
   workflow_dispatch:
+    inputs:
+      review_mode:
+        description: Review render quality
+        required: true
+        default: hero
+        type: choice
+        options:
+          - fast
+          - hero
 
 concurrency:
   group: phase-01a-${{ github.ref }}
@@ -27,6 +36,7 @@ jobs:
     env:
       BLENDER_VERSION: "5.2.2"
       BLENDER_DIR: "blender-5.2.2-linux-x64"
+      DWELLING_REVIEW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.review_mode || 'fast' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +71,11 @@ jobs:
           test -s build/phase_01a/bed-001.blend
           test -s build/phase_01a/bed-001.glb
           test -s build/phase_01a/preview-sofa-001-3q.png
-          test -s build/phase_01a/preview-sofa-001-side.png
           test -s build/phase_01a/preview-bed-001-3q.png
-          test -s build/phase_01a/preview-bed-001-side.png
+          if [ "$DWELLING_REVIEW_MODE" = "hero" ]; then
+            test -s build/phase_01a/preview-sofa-001-side.png
+            test -s build/phase_01a/preview-bed-001-side.png
+          fi
           test -s build/phase_01a/lighting-preset-warm-daylight.json
           test -s build/phase_01a/validation.json
 
