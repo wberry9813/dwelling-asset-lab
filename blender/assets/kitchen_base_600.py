@@ -114,12 +114,12 @@ def build_kitchen_base_600(location=(0, 0, 0), name_prefix="KitchenBase600"):
     )
 
     # Four hidden adjustable legs reinforce believable construction.
-    for sx in (-0.225, 0.225):
-        for sy in (-0.175, 0.175):
+    for sx in (-0.180, 0.180):
+        for sy in (-0.120, 0.120):
             leg = cylinder(
                 f"{name_prefix}_Leg_{'L' if sx < 0 else 'R'}_{'F' if sy < 0 else 'B'}",
                 (ox + sx, oy + sy, oz + PLINTH_HEIGHT / 2),
-                0.022,
+                0.018,
                 PLINTH_HEIGHT,
                 metal_mat,
                 vertices=32,
@@ -161,16 +161,16 @@ def build_kitchen_base_600(location=(0, 0, 0), name_prefix="KitchenBase600"):
         (left_center_x, door_y, door_z),
         (door_width, DOOR, door_height),
         front_mat,
-        bevel=0.006,
-        segments=5,
+        bevel=0.0025,
+        segments=4,
     )
     right_door = box(
         "Door_R",
         (right_center_x, door_y, door_z),
         (door_width, DOOR, door_height),
         front_mat,
-        bevel=0.006,
-        segments=5,
+        bevel=0.0025,
+        segments=4,
     )
     _parent_keep_world(left_door, left_pivot)
     _parent_keep_world(right_door, right_pivot)
@@ -184,7 +184,7 @@ def build_kitchen_base_600(location=(0, 0, 0), name_prefix="KitchenBase600"):
     left_handle = box(
         "Handle_L",
         (-CENTER_GAP / 2 - handle_x_offset, handle_y, handle_z),
-        (0.014, 0.020, handle_h),
+        (0.012, 0.018, handle_h),
         metal_mat,
         bevel=0.004,
         segments=4,
@@ -215,7 +215,7 @@ def build_kitchen_base_600(location=(0, 0, 0), name_prefix="KitchenBase600"):
 
     return {
         "name": "kitchen-base-600",
-        "version": "0.1",
+        "version": "0.2",
         "front_axis": "-Y",
         "module_width_m": MODULE_WIDTH,
         "nominal_dimensions_m": [MODULE_WIDTH, 0.601, OVERALL_HEIGHT],
