@@ -8,6 +8,7 @@ on:
       - "blender/common.py"
       - "scenes/hard_surface_benchmark/**"
       - "assets/manifests/kitchen-base-600.json"
+      - "tools/validate_cabinet_glb_semantics.py"
       - ".github/workflows/build-phase-01b.yml"
   pull_request:
     paths:
@@ -68,6 +69,9 @@ jobs:
           test -s build/phase_01b/preview-kitchen-base-600-closed.png
           test -s build/phase_01b/preview-kitchen-base-600-open.png
           test -s build/phase_01b/validation.json
+
+      - name: Validate runtime door hierarchy
+        run: python3 tools/validate_cabinet_glb_semantics.py build/phase_01b/kitchen-base-600.glb
 
       - name: Show validation
         run: cat build/phase_01b/validation.json
