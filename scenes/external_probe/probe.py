@@ -31,6 +31,20 @@ mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 if not mesh_objects:
     raise RuntimeError("External asset contains no mesh objects")
 
+# Split source meshes by disconnected geometry. Many library assets are
+# delivered as one Blender object even when mattress, pillow, blanket and
+# frame are topologically separate islands.
+for source_obj in list(mesh_objects):
+    bpy.ops.object.select_all(action="DESELECT")
+    source_obj.select_set(True)
+    bpy.context.view_layer.objects.active = source_obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.separate(type="LOOSE")
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+
 source_mesh_object_count = len(mesh_objects)
 
 # Split disconnected geometry islands into separate objects. Many production
@@ -148,6 +162,31 @@ bpy.ops.render.render(write_still=True)
 cam.location = (center.x, center.y - diag*2.6, center.z + diag*0.35)
 cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
 scene.render.filepath = str(OUT / "probe-clay-front.png")
+bpy.ops.render.render(write_still=True)
+
+# Component review: deterministic distinct materials make loose parts easy to
+# evaluate without depending on original textures.
+component_palette = [
+    (0.18, 0.32, 0.52, 1.0),
+    (0.50, 0.24, 0.16, 1.0),
+    (0.24, 0.46, 0.28, 1.0),
+    (0.54, 0.42, 0.16, 1.0),
+    (0.38, 0.24, 0.46, 1.0),
+    (0.22, 0.46, 0.48, 1.0),
+]
+for index, obj in enumerate(mesh_objects):
+    mat = bpy.data.materials.new(f"Component_{index:02d}")
+    mat.diffuse_color = component_palette[index % len(component_palette)]
+    mat.use_nodes = True
+    pbsdf = mat.node_tree.nodes.get("Principled BSDF")
+    pbsdf.inputs["Base Color"].default_value = component_palette[index % len(component_palette)]
+    pbsdf.inputs["Roughness"].default_value = 0.72
+    obj.data.materials.clear()
+    obj.data.materials.append(mat)
+
+cam.location = (center.x + diag*1.8, center.y - diag*2.0, center.z + diag*1.25)
+cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
+scene.render.filepath = str(OUT / "probe-components-3q.png")
 bpy.ops.render.render(write_still=True)
 
 report = {
