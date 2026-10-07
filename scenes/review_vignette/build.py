@@ -165,6 +165,19 @@ def build_review(asset_kind):
 sofa_report = build_review("sofa")
 bed_report = build_review("bed")
 
+def validate_asset_contract(asset_report):
+    measured = asset_report["measured_bounds_m"]["size"]
+    nominal = asset_report["nominal_dimensions_m"]
+    errors = [round(abs(measured[i] - nominal[i]), 4) for i in range(3)]
+    ground_offset = round(abs(asset_report["measured_bounds_m"]["min"][2]), 4)
+    asset_report["dimension_error_m"] = errors
+    asset_report["ground_offset_m"] = ground_offset
+    asset_report["contract_pass"] = max(errors) <= 0.03 and ground_offset <= 0.015
+    return asset_report["contract_pass"]
+
+sofa_contract_pass = validate_asset_contract(sofa_report)
+bed_contract_pass = validate_asset_contract(bed_report)
+
 with open(os.path.join(OUT, "lighting-preset-warm-daylight.json"), "w") as fp:
     json.dump(LIGHTING_PRESET, fp, indent=2)
 
@@ -187,9 +200,20 @@ report = {
     "style": "Warm Miniature Realism",
     "assets": [sofa_report, bed_report],
     "lighting_preset": LIGHTING_PRESET["preset"],
+    "asset_contract": {
+        "origin": "world origin on floor contact plane; asset centered around X/Y zero",
+        "dimension_tolerance_m": 0.03,
+        "ground_tolerance_m": 0.015,
+    },
     "required_outputs": required,
     "missing_outputs": missing,
-    "status": "pass" if not missing and sofa_report["mesh"]["objects"] >= 15 and bed_report["mesh"]["objects"] >= 8 else "fail",
+    "status": "pass" if (
+        not missing
+        and sofa_report["mesh"]["objects"] >= 15
+        and bed_report["mesh"]["objects"] >= 8
+        and sofa_contract_pass
+        and bed_contract_pass
+    ) else "fail",
 }
 
 with open(os.path.join(OUT, "validation.json"), "w") as fp:
