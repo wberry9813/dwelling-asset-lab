@@ -1,0 +1,38 @@
+name: Build Apartment 001
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blender-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Blender
+        run: |
+          BLENDER_VERSION=4.3.2
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender4.3/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          tar -xf blender.tar.xz
+          echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
+
+      - name: Build, validate and render
+        run: blender --background --python scenes/apartment_001/build.py
+
+      - name: Show validation report
+        run: cat build/validation.json
+
+      - name: Upload review package
+        uses: actions/upload-artifact@v4
+        with:
+          name: apartment-001-${{ github.sha }}
+          path: build/
+          retention-days: 7
+          if-no-files-found: error
