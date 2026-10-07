@@ -47,3 +47,8 @@ See [Phase 01 — Production Direction & Benchmark Strategy](docs/PHASE_01_PRODU
 ### Quality-first production
 
 See [Quality-First Asset Pipeline](docs/QUALITY_FIRST_PIPELINE.md) for the adopted hybrid authoring model: curated Blender sources, Geometry Nodes / cloth / sculpt where useful, with automated CI validation and export.
+
+
+### Hard-surface benchmark
+
+[Phase 01B — Hard Surface Benchmark](docs/PHASE_01B_HARD_SURFACE_BENCHMARK.md) validates the 600 mm kitchen base cabinet module, physical/install bounds, semantic door pivots and runtime GLB hierarchy.
