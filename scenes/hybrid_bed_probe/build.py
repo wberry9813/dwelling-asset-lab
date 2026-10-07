@@ -87,6 +87,10 @@ pillow_src = sorted(
     reverse=True,
 )[0]
 
+# Snapshot reference metrics before removing the full reference asset.
+duvet_source_polygons = len(duvet_src.data.polygons)
+pillow_source_dimensions = [round(v, 4) for v in size_of(pillow_src)]
+
 # Duplicate selected source geometry before removing the full reference asset.
 duvet = duvet_src.copy()
 duvet.data = duvet_src.data.copy()
@@ -229,8 +233,8 @@ report = {
     "status": "pass",
     "source": metadata,
     "selectedSoftParts": {
-        "duvetSourcePolygons": len(duvet_src.data.polygons) if duvet_src.name in bpy.data.objects else None,
-        "pillowSourceDimensionsBeforeNormalize": [round(v, 4) for v in size_of(pillow_src)] if pillow_src.name in bpy.data.objects else None,
+        "duvetSourcePolygons": duvet_source_polygons,
+        "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
     },
     "prototype": {
         "nominalDimensionsMeters": [1.98, 2.10, 1.47],
