@@ -35,6 +35,8 @@ jobs:
           test -s build/dwelling-apartment-001.blend
           test -s build/dwelling-apartment-001.glb
           test -s build/preview-isometric.png
+          test -s build/preview-top.png
+          test -s build/preview-living.png
           test -s build/validation.json
 
       - name: Show validation report
