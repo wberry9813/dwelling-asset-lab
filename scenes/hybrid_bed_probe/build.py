@@ -8,9 +8,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from blender.common import material, rounded_box, point_at
+from blender.common import material, rounded_box, superellipsoid, point_at
 
 SRC = ROOT / "build" / "hybrid_bed_probe" / "source"
+PILLOW_SRC = ROOT / "build" / "hybrid_bed_probe" / "pillow_source"
+TEX_SRC = ROOT / "build" / "hybrid_bed_probe" / "textures"
 OUT = ROOT / "build" / "hybrid_bed_probe" / "result"
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -18,6 +20,13 @@ metadata = json.loads((SRC / "source-metadata.json").read_text())
 source_path = pathlib.Path(metadata["downloadedFile"])
 if not source_path.is_absolute():
     source_path = ROOT / source_path
+
+pillow_metadata = json.loads((PILLOW_SRC / "source-metadata.json").read_text())
+pillow_source_path = pathlib.Path(pillow_metadata["downloadedFile"])
+if not pillow_source_path.is_absolute():
+    pillow_source_path = ROOT / pillow_source_path
+
+texture_metadata = json.loads((TEX_SRC / "texture-metadata.json").read_text())
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -84,14 +93,78 @@ bpy.context.collection.objects.link(pillow_r)
 for obj in parts:
     bpy.data.objects.remove(obj, do_unlink=True)
 
+# Dedicated CC0 accent-pillow topology.
+with bpy.data.libraries.load(str(pillow_source_path), link=False) as (src, dst):
+    dst.objects = list(src.objects)
+for obj in dst.objects:
+    if obj is not None:
+        bpy.context.collection.objects.link(obj)
+
+accent_parts = [o for o in scene.objects if o.type == "MESH"]
+for p in accent_parts:
+    recenter_origin(p)
+
+accent_src = sorted(accent_parts, key=lambda o: len(o.data.polygons), reverse=True)[0]
+accent_source_dimensions = [round(v, 4) for v in size_of(accent_src)]
+accent_pillow = accent_src.copy()
+accent_pillow.data = accent_src.data.copy()
+bpy.context.collection.objects.link(accent_pillow)
+
+for obj in accent_parts:
+    bpy.data.objects.remove(obj, do_unlink=True)
+
 # ---------------------------------------------------------------------------
 # Materials and modern hard structure.
 # ---------------------------------------------------------------------------
 
+def texture_path(map_name):
+    path = pathlib.Path(texture_metadata["maps"][map_name]["file"])
+    return path if path.is_absolute() else ROOT / path
+
+def make_linen_material(name, tint, normal_strength=0.25, texture_scale=3.5):
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    bsdf = nodes.get("Principled BSDF")
+
+    texcoord = nodes.new("ShaderNodeTexCoord")
+    mapping = nodes.new("ShaderNodeMapping")
+    mapping.inputs["Scale"].default_value = (texture_scale, texture_scale, texture_scale)
+    links.new(texcoord.outputs["Object"], mapping.inputs["Vector"])
+
+    diffuse = nodes.new("ShaderNodeTexImage")
+    diffuse.image = bpy.data.images.load(str(texture_path("diffuse")), check_existing=True)
+    links.new(mapping.outputs["Vector"], diffuse.inputs["Vector"])
+
+    multiply = nodes.new("ShaderNodeMixRGB")
+    multiply.blend_type = "MULTIPLY"
+    multiply.inputs["Fac"].default_value = 0.72
+    multiply.inputs[2].default_value = (*tint, 1.0)
+    links.new(diffuse.outputs["Color"], multiply.inputs[1])
+    links.new(multiply.outputs["Color"], bsdf.inputs["Base Color"])
+
+    rough = nodes.new("ShaderNodeTexImage")
+    rough.image = bpy.data.images.load(str(texture_path("roughness")), check_existing=True)
+    rough.image.colorspace_settings.name = "Non-Color"
+    links.new(mapping.outputs["Vector"], rough.inputs["Vector"])
+    links.new(rough.outputs["Color"], bsdf.inputs["Roughness"])
+
+    normal_tex = nodes.new("ShaderNodeTexImage")
+    normal_tex.image = bpy.data.images.load(str(texture_path("normal")), check_existing=True)
+    normal_tex.image.colorspace_settings.name = "Non-Color"
+    links.new(mapping.outputs["Vector"], normal_tex.inputs["Vector"])
+    normal = nodes.new("ShaderNodeNormalMap")
+    normal.inputs["Strength"].default_value = normal_strength
+    links.new(normal_tex.outputs["Color"], normal.inputs["Color"])
+    links.new(normal.outputs["Normal"], bsdf.inputs["Normal"])
+    return mat
+
 oak = material("HybridBed Natural Oak", (0.24, 0.135, 0.060), 0.58)
 mattress_mat = material("HybridBed Mattress", (0.72, 0.69, 0.63), 0.95)
-linen = material("HybridBed Linen", (0.61, 0.57, 0.51), 0.97)
-sheet = material("HybridBed Sheet", (0.84, 0.82, 0.78), 0.98)
+linen = make_linen_material("HybridBed Linen PBR", (0.74, 0.69, 0.61), 0.30, 3.6)
+sheet = make_linen_material("HybridBed Sheet PBR", (0.92, 0.90, 0.86), 0.12, 4.2)
+accent_linen = make_linen_material("HybridBed Accent Linen PBR", (0.47, 0.34, 0.25), 0.34, 4.0)
 shadow = material("HybridBed Shadow", (0.035, 0.03, 0.028), 0.78)
 
 frame = rounded_box("HybridBed_Frame", (0, 0, 0.18), (1.98, 2.10, 0.20), oak, 0.040, 5)
@@ -101,14 +174,28 @@ headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0
 mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
 sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.88, 0.012), sheet, 0.009, 4)
 
-# Low-profile filled body under the cloth shell.
-duvet_loft = rounded_box(
+# Filled duvet body: loft comes from volume, while visible fabric remains thin.
+def duvet_loft_deform(x, y, z, a, b, c):
+    nx = x / max(a, 1e-6)
+    ny = y / max(b, 1e-6)
+    if z > 0:
+        center = max(0.0, 1.0 - nx * nx) * max(0.0, 1.0 - ny * ny)
+        z += 0.020 * center
+        # Gentle asymmetry / compression prevents the fill from reading as a slab.
+        z -= 0.013 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
+        z += 0.006 * math.sin(2.7 * x + 0.8) * center
+    return x, y, z
+
+duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
-    (0, -0.20, 0.610),
-    (1.58, 1.24, 0.080),
+    (0, -0.18, 0.635),
+    (1.68, 1.36, 0.145),
     linen,
-    0.065,
-    8,
+    n_xy=5.2,
+    n_z=3.2,
+    segments=72,
+    rings=34,
+    deform=duvet_loft_deform,
 )
 
 # Collision surfaces for authoring-time cloth simulation.
@@ -123,16 +210,16 @@ for obj in (mattress, duvet_loft):
 # ---------------------------------------------------------------------------
 
 bpy.ops.mesh.primitive_grid_add(
-    x_subdivisions=45,
-    y_subdivisions=51,
+    x_subdivisions=53,
+    y_subdivisions=61,
     size=2.0,
-    location=(0.0, -0.20, 0.755),
+    location=(0.0, -0.18, 0.805),
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
 # Intentionally larger than the loft volume so the free edges can drape.
 # Width stays within the 1.98m outer frame contract.
-duvet_shell.scale = (0.965, 0.805, 1.0)
+duvet_shell.scale = (0.955, 0.840, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 # Add a few millimetres of deterministic asymmetry before the solve.
@@ -140,28 +227,34 @@ for v in duvet_shell.data.vertices:
     x, y, z = v.co
     # Low-amplitude asymmetry creates natural wrinkle seeds while the larger
     # free border supplies the actual gravity-driven drape.
-    v.co.z += 0.008 * math.sin(4.0 * x + 1.1) * math.sin(3.2 * y - 0.7)
-    v.co.z += 0.004 * math.sin(7.5 * x - 2.4 * y)
-    v.co.x += 0.004 * math.sin(2.6 * y + 0.9)
+    v.co.z += 0.010 * math.sin(4.0 * x + 1.1) * math.sin(3.2 * y - 0.7)
+    v.co.z += 0.006 * math.sin(7.5 * x - 2.4 * y)
+    v.co.x += 0.006 * math.sin(2.6 * y + 0.9)
 
 duvet_shell.data.materials.append(linen)
 
 cloth_mod = duvet_shell.modifiers.new("Authoring Cloth", "CLOTH")
 settings = cloth_mod.settings
 for attr, value in [
-    ("quality", 7),
-    ("mass", 0.22),
-    ("air_damping", 3.0),
-    ("tension_stiffness", 14.0),
-    ("compression_stiffness", 14.0),
-    ("shear_stiffness", 7.0),
-    ("bending_stiffness", 0.22),
+    ("quality", 8),
+    ("mass", 0.18),
+    ("air_damping", 3.5),
+    ("tension_stiffness", 11.0),
+    ("compression_stiffness", 12.0),
+    ("shear_stiffness", 6.0),
+    ("bending_stiffness", 0.16),
 ]:
     if hasattr(settings, attr):
         setattr(settings, attr, value)
 
+collision_settings = cloth_mod.collision_settings
+if hasattr(collision_settings, "use_self_collision"):
+    collision_settings.use_self_collision = True
+if hasattr(collision_settings, "self_distance_min"):
+    collision_settings.self_distance_min = 0.004
+
 scene.frame_start = 1
-scene.frame_end = 58
+scene.frame_end = 72
 for frame_no in range(scene.frame_start, scene.frame_end + 1):
     scene.frame_set(frame_no)
 
@@ -198,7 +291,7 @@ for obj in (pillow_l, pillow_r):
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.70, 0.46, 0.16)
+    obj.dimensions = (0.72, 0.52, 0.20)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -210,8 +303,25 @@ def setup_pillow(obj, name, loc, rot_z):
         math.radians(rot_z),
     )
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.40, 0.59, 0.680), -5)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.40, 0.56, 0.690), 5)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.39, 0.59, 0.705), -4)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.39, 0.56, 0.715), 4)
+
+accent_pillow.name = "HybridBed_AccentPillow_CC0"
+accent_pillow.data.materials.clear()
+accent_pillow.data.materials.append(accent_linen)
+for poly in accent_pillow.data.polygons:
+    poly.use_smooth = True
+accent_pillow.dimensions = (0.46, 0.18, 0.42)
+bpy.ops.object.select_all(action="DESELECT")
+accent_pillow.select_set(True)
+bpy.context.view_layer.objects.active = accent_pillow
+bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+accent_pillow.location = (0.03, 0.43, 0.79)
+accent_pillow.rotation_euler = (
+    math.radians(-10),
+    math.radians(-2),
+    math.radians(7),
+)
 
 # ---------------------------------------------------------------------------
 # Review scene.
@@ -268,7 +378,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
-    duvet_loft, duvet_shell, pillow_l, pillow_r,
+    duvet_loft, duvet_shell, pillow_l, pillow_r, accent_pillow,
 ]
 bpy.ops.object.select_all(action="DESELECT")
 for o in bed_objects:
@@ -285,7 +395,7 @@ bpy.ops.export_scene.gltf(
 report = {
     "status": "pass",
     "source": metadata,
-    "authoringMethod": "parametric hard structure + Blender Cloth baked shell + CC0 pillow topology",
+    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + CC0 sleep/accent pillow topology + CC0 linen PBR",
     "simulation": {
         "frames": scene.frame_end,
         "grid": [45, 51],
@@ -293,6 +403,26 @@ report = {
     },
     "selectedSoftParts": {
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
+        "accentPillowSourceDimensionsBeforeNormalize": accent_source_dimensions,
+        "sleepPillowSource": {
+            "asset": metadata["assetId"],
+            "sha256": metadata["sha256"],
+        },
+        "accentPillowSource": {
+            "asset": pillow_metadata["assetId"],
+            "sha256": pillow_metadata["sha256"],
+        },
+    },
+    "materialProvenance": {
+        "linen": {
+            "asset": texture_metadata["assetId"],
+            "filesHash": texture_metadata["filesHash"],
+            "license": texture_metadata["license"],
+            "maps": {
+                key: value["sha256"]
+                for key, value in texture_metadata["maps"].items()
+            },
+        },
     },
     "prototype": {
         "nominalDimensionsMeters": [1.98, 2.10, 1.40],
