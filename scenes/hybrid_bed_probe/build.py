@@ -3,7 +3,6 @@ import json
 import math
 import pathlib
 import sys
-from mathutils import Vector
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -21,9 +20,12 @@ if not source_path.is_absolute():
     source_path = ROOT / source_path
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
+scene = bpy.context.scene
+scene.unit_settings.system = "METRIC"
+scene.unit_settings.scale_length = 1.0
 
 # ---------------------------------------------------------------------------
-# Import and split the CC0 reference source.
+# CC0 reference: only keep the naturally authored pillow topology.
 # ---------------------------------------------------------------------------
 
 with bpy.data.libraries.load(str(source_path), link=False) as (src, dst):
@@ -32,7 +34,7 @@ for obj in dst.objects:
     if obj is not None:
         bpy.context.collection.objects.link(obj)
 
-source_meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+source_meshes = [o for o in scene.objects if o.type == "MESH"]
 for obj in list(source_meshes):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -42,7 +44,7 @@ for obj in list(source_meshes):
     bpy.ops.mesh.separate(type="LOOSE")
     bpy.ops.object.mode_set(mode="OBJECT")
 
-parts = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+parts = [o for o in scene.objects if o.type == "MESH"]
 
 def recenter_origin(obj):
     bpy.ops.object.select_all(action="DESELECT")
@@ -56,67 +58,25 @@ def size_of(obj):
 for p in parts:
     recenter_origin(p)
 
-# Identify likely soft candidates by geometry proportions.
-surface_candidates = [
-    p for p in parts
-    if size_of(p)[0] > 1.5
-    and size_of(p)[1] > 0.5
-    and size_of(p)[2] < 0.35
-]
-drape_candidates = [
-    p for p in parts
-    if size_of(p)[0] > 1.5
-    and size_of(p)[1] < 0.35
-    and size_of(p)[2] > 0.45
-]
 pillow_candidates = [
     p for p in parts
     if 0.5 < size_of(p)[0] < 1.0
     and size_of(p)[1] > 0.45
     and 0.18 < size_of(p)[2] < 0.45
 ]
+if not pillow_candidates:
+    raise RuntimeError("Unable to classify CC0 pillow reference")
 
-if not surface_candidates or not drape_candidates or not pillow_candidates:
-    raise RuntimeError(
-        "Unable to classify reference soft parts: "
-        f"surfaces={len(surface_candidates)} drapes={len(drape_candidates)} pillows={len(pillow_candidates)}"
-    )
-
-# Treat bedding as two layers: a low-profile loft volume plus a thin draped shell.
-loft_src = sorted(
-    surface_candidates,
-    key=lambda o: len(o.data.polygons),
-    reverse=True,
-)[0]
-shell_src = sorted(
-    drape_candidates,
-    key=lambda o: len(o.data.polygons),
-    reverse=True,
-)[0]
 pillow_src = sorted(
     pillow_candidates,
     key=lambda o: len(o.data.polygons),
     reverse=True,
 )[0]
-
-# Snapshot reference metrics before removing the full reference asset.
-loft_source_polygons = len(loft_src.data.polygons)
-shell_source_polygons = len(shell_src.data.polygons)
 pillow_source_dimensions = [round(v, 4) for v in size_of(pillow_src)]
-
-# Duplicate selected source geometry before removing the full reference asset.
-duvet_loft = loft_src.copy()
-duvet_loft.data = loft_src.data.copy()
-bpy.context.collection.objects.link(duvet_loft)
-
-duvet_shell = shell_src.copy()
-duvet_shell.data = shell_src.data.copy()
-bpy.context.collection.objects.link(duvet_shell)
 
 pillow_l = pillow_src.copy()
 pillow_l.data = pillow_src.data.copy()
 bpy.context.collection.objects.link(pillow_l)
-
 pillow_r = pillow_src.copy()
 pillow_r.data = pillow_src.data.copy()
 bpy.context.collection.objects.link(pillow_r)
@@ -125,7 +85,7 @@ for obj in parts:
     bpy.data.objects.remove(obj, do_unlink=True)
 
 # ---------------------------------------------------------------------------
-# Dwelling modern hard structure.
+# Materials and modern hard structure.
 # ---------------------------------------------------------------------------
 
 oak = material("HybridBed Natural Oak", (0.24, 0.135, 0.060), 0.58)
@@ -141,39 +101,95 @@ headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0
 mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
 sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.88, 0.012), sheet, 0.009, 4)
 
+# Low-profile filled body under the cloth shell.
+duvet_loft = rounded_box(
+    "HybridBed_DuvetLoft",
+    (0, -0.23, 0.615),
+    (1.72, 1.38, 0.090),
+    linen,
+    0.075,
+    8,
+)
+
+# Collision surfaces for authoring-time cloth simulation.
+for obj in (mattress, duvet_loft):
+    collision = obj.modifiers.new("Authoring Collision", "COLLISION")
+    if hasattr(obj, "collision"):
+        if hasattr(obj.collision, "thickness_outer"):
+            obj.collision.thickness_outer = 0.006
+
 # ---------------------------------------------------------------------------
-# Reuse only the CC0 soft geometry, normalized into the modern bed.
+# Real Blender Cloth authoring pass.
 # ---------------------------------------------------------------------------
 
-for obj in (duvet_loft, duvet_shell, pillow_l, pillow_r):
-    obj.data.materials.clear()
-    obj.data.materials.append(linen)
-    for poly in obj.data.polygons:
-        poly.use_smooth = True
-
-# Low-profile inner duvet volume: enough loft to feel filled, not a foam slab.
-duvet_loft.name = "HybridBed_DuvetLoft_CC0Base"
-bpy.ops.object.select_all(action="DESELECT")
-duvet_loft.select_set(True)
-bpy.context.view_layer.objects.active = duvet_loft
-duvet_loft.dimensions = (1.73, 1.36, 0.075)
+bpy.ops.mesh.primitive_grid_add(
+    x_subdivisions=41,
+    y_subdivisions=47,
+    size=2.0,
+    location=(0.0, -0.23, 0.745),
+)
+duvet_shell = bpy.context.object
+duvet_shell.name = "HybridBed_DuvetShell_Cloth"
+duvet_shell.scale = (0.90, 0.74, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-duvet_loft.select_set(False)
-duvet_loft.location = (0.0, -0.25, 0.617)
-duvet_loft.rotation_euler = (math.radians(0.7), 0, math.radians(-0.5))
 
-# Thin external cloth shell: authored drape supplies the irregular edge/folds.
-duvet_shell.name = "HybridBed_DuvetShell_CC0Draped"
+# Add a few millimetres of deterministic asymmetry before the solve.
+for v in duvet_shell.data.vertices:
+    x, y, z = v.co
+    v.co.z += 0.006 * math.sin(4.2 * x + 1.1) * math.sin(3.5 * y - 0.7)
+    v.co.z += 0.003 * math.sin(8.0 * x - 2.7 * y)
+
+duvet_shell.data.materials.append(linen)
+
+cloth_mod = duvet_shell.modifiers.new("Authoring Cloth", "CLOTH")
+settings = cloth_mod.settings
+for attr, value in [
+    ("quality", 6),
+    ("mass", 0.24),
+    ("air_damping", 4.0),
+    ("tension_stiffness", 18.0),
+    ("compression_stiffness", 18.0),
+    ("shear_stiffness", 8.0),
+    ("bending_stiffness", 0.35),
+]:
+    if hasattr(settings, attr):
+        setattr(settings, attr, value)
+
+scene.frame_start = 1
+scene.frame_end = 70
+for frame_no in range(scene.frame_start, scene.frame_end + 1):
+    scene.frame_set(frame_no)
+
+# Freeze the accepted simulated state into actual geometry for this build.
 bpy.ops.object.select_all(action="DESELECT")
 duvet_shell.select_set(True)
 bpy.context.view_layer.objects.active = duvet_shell
-duvet_shell.rotation_euler = (math.radians(90), 0, 0)
-bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-duvet_shell.dimensions = (1.78, 1.43, 0.028)
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-duvet_shell.select_set(False)
-duvet_shell.location = (0.0, -0.23, 0.665)
-duvet_shell.rotation_euler = (math.radians(0.7), 0, math.radians(-0.5))
+scene.frame_set(scene.frame_end)
+bpy.ops.object.modifier_apply(modifier=cloth_mod.name)
+
+solidify = duvet_shell.modifiers.new("Fabric Thickness", "SOLIDIFY")
+solidify.thickness = 0.003
+solidify.offset = -0.3
+bpy.ops.object.modifier_apply(modifier=solidify.name)
+
+subsurf = duvet_shell.modifiers.new("Fabric Smoothing", "SUBSURF")
+subsurf.subdivision_type = "CATMULL_CLARK"
+subsurf.levels = 1
+subsurf.render_levels = 1
+bpy.ops.object.modifier_apply(modifier=subsurf.name)
+
+for poly in duvet_shell.data.polygons:
+    poly.use_smooth = True
+
+# ---------------------------------------------------------------------------
+# CC0 pillow normalization.
+# ---------------------------------------------------------------------------
+
+for obj in (pillow_l, pillow_r):
+    obj.data.materials.clear()
+    obj.data.materials.append(sheet)
+    for poly in obj.data.polygons:
+        poly.use_smooth = True
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
@@ -183,16 +199,19 @@ def setup_pillow(obj, name, loc, rot_z):
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.location = loc
-    obj.rotation_euler = (math.radians(-8), math.radians(2 if loc[0] < 0 else -2), math.radians(rot_z))
+    obj.rotation_euler = (
+        math.radians(-8),
+        math.radians(2 if loc[0] < 0 else -2),
+        math.radians(rot_z),
+    )
 
 setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.40, 0.59, 0.680), -5)
 setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.40, 0.56, 0.690), 5)
 
 # ---------------------------------------------------------------------------
-# Review lighting.
+# Review scene.
 # ---------------------------------------------------------------------------
 
-scene = bpy.context.scene
 scene.render.engine = "BLENDER_EEVEE" if bpy.app.version >= (5, 0, 0) else "BLENDER_EEVEE_NEXT"
 scene.render.resolution_x = 1024
 scene.render.resolution_y = 768
@@ -238,11 +257,10 @@ point_at(cam, (0, 0.0, 0.62))
 scene.render.filepath = str(OUT / "hybrid-bed-side.png")
 bpy.ops.render.render(write_still=True)
 
-# Save/export prototype for inspection only.
+# Save/export prototype for inspection.
 blend_path = OUT / "hybrid-bed-prototype.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
-# Export only bed objects, not review shell/lights/camera.
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
     duvet_loft, duvet_shell, pillow_l, pillow_r,
@@ -262,15 +280,18 @@ bpy.ops.export_scene.gltf(
 report = {
     "status": "pass",
     "source": metadata,
+    "authoringMethod": "parametric hard structure + Blender Cloth baked shell + CC0 pillow topology",
+    "simulation": {
+        "frames": scene.frame_end,
+        "grid": [41, 47],
+        "fabricThicknessMeters": 0.003,
+    },
     "selectedSoftParts": {
-        "duvetLoftSourcePolygons": loft_source_polygons,
-        "duvetShellSourcePolygons": shell_source_polygons,
-        "duvetConstruction": "CC0 low-profile loft + thin draped shell",
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
     },
     "prototype": {
         "nominalDimensionsMeters": [1.98, 2.10, 1.40],
-        "note": "Experimental CC0 soft-geometry transfer. Not a promoted production asset.",
+        "note": "Experimental hybrid authored bed. Cloth solve is applied before export.",
     },
 }
 (OUT / "hybrid-bed-report.json").write_text(json.dumps(report, indent=2))
