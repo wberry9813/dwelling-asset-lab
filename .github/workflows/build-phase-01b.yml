@@ -1,0 +1,81 @@
+name: Build Phase 01B Hard Surface
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "blender/assets/kitchen_base_600.py"
+      - "blender/common.py"
+      - "scenes/hard_surface_benchmark/**"
+      - "assets/manifests/kitchen-base-600.json"
+      - ".github/workflows/build-phase-01b.yml"
+  pull_request:
+    paths:
+      - "blender/assets/kitchen_base_600.py"
+      - "blender/common.py"
+      - "scenes/hard_surface_benchmark/**"
+      - "assets/manifests/kitchen-base-600.json"
+      - ".github/workflows/build-phase-01b.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: phase-01b-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BLENDER_VERSION: "5.2.2"
+      BLENDER_DIR: "blender-5.2.2-linux-x64"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate asset manifests
+        run: python3 tools/validate_asset_manifests.py
+
+      - name: Install headless rendering libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libx11-6 libxext6 libxrender1 libxi6 libxfixes3 libxkbcommon0
+
+      - name: Restore Blender cache
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BLENDER_DIR }}
+          key: blender-linux-x64-${{ env.BLENDER_VERSION }}
+
+      - name: Download Blender 5.2 LTS
+        if: steps.blender-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L --fail --retry 3             "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz"             -o blender.tar.xz
+          tar -xf blender.tar.xz
+
+      - name: Add Blender to PATH
+        run: echo "$PWD/${BLENDER_DIR}" >> "$GITHUB_PATH"
+
+      - name: Build hard-surface benchmark
+        run: |
+          blender --background --python-exit-code 1 --python scenes/hard_surface_benchmark/build.py
+          test -s build/phase_01b/kitchen-base-600.blend
+          test -s build/phase_01b/kitchen-base-600.glb
+          test -s build/phase_01b/preview-kitchen-base-600-closed.png
+          test -s build/phase_01b/preview-kitchen-base-600-open.png
+          test -s build/phase_01b/validation.json
+
+      - name: Show validation
+        run: cat build/phase_01b/validation.json
+
+      - name: Upload Phase 01B package
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-01b-hard-surface-${{ github.sha }}
+          path: build/phase_01b/
+          retention-days: 7
+          if-no-files-found: error
