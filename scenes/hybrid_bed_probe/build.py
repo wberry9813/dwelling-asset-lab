@@ -194,16 +194,16 @@ def duvet_loft_deform(x, y, z, a, b, c):
     ny = y / max(b, 1e-6)
     if z > 0:
         center = max(0.0, 1.0 - nx * nx) * max(0.0, 1.0 - ny * ny)
-        z += 0.014 * center
+        z += 0.010 * center
         # Gentle asymmetry / compression prevents the fill from reading as a slab.
-        z -= 0.018 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
+        z -= 0.020 * math.exp(-((x + 0.34) / 0.30) ** 2 - ((y - 0.18) / 0.34) ** 2)
         z += 0.008 * math.sin(2.7 * x + 0.8) * center
     return x, y, z
 
 duvet_loft = superellipsoid(
     "HybridBed_DuvetLoft",
-    (0, -0.18, 0.625),
-    (1.66, 1.32, 0.112),
+    (0, -0.27, 0.615),
+    (1.66, 1.18, 0.102),
     duvet_fill,
     n_xy=5.2,
     n_z=3.2,
@@ -256,14 +256,14 @@ bpy.ops.mesh.primitive_grid_add(
     x_subdivisions=53,
     y_subdivisions=61,
     size=2.0,
-    location=(0.0, -0.18, 0.765),
+    location=(0.0, -0.26, 0.742),
 )
 duvet_shell = bpy.context.object
 duvet_shell.name = "HybridBed_DuvetShell_Cloth"
 ensure_uv(duvet_shell)
 # Intentionally larger than the loft volume so the free edges can drape.
 # Width stays within the 1.98m outer frame contract.
-duvet_shell.scale = (0.945, 0.825, 1.0)
+duvet_shell.scale = (0.940, 0.700, 1.0)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 # Add a few millimetres of deterministic asymmetry before the solve.
@@ -336,20 +336,20 @@ for obj in (pillow_l, pillow_r):
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.68, 0.46, 0.17)
+    obj.dimensions = (0.68, 0.44, 0.16)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.location = loc
     obj.rotation_euler = (
-        math.radians(-5),
+        math.radians(3),
         math.radians(2 if loc[0] < 0 else -2),
         math.radians(rot_z),
     )
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.36, 0.61, 0.685), -2)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.60, 0.690), 2)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.36, 0.69, 0.665), -2)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.68, 0.670), 2)
 
 # Dedicated accent-pillow source was probed successfully, but is intentionally
 # excluded from this bed composition because its crumpled decorative silhouette
@@ -438,6 +438,17 @@ report = {
         "frames": scene.frame_end,
         "grid": [53, 61],
         "fabricThicknessMeters": 0.003,
+    },
+    "beddingLayout": {
+        "frontAxis": "-Y",
+        "headDirection": "+Y",
+        "pillowPitchDegreesX": 3.0,
+        "pillowCentersY": [0.69, 0.68],
+        "duvetLoftCenterY": -0.27,
+        "duvetLoftDepth": 1.18,
+        "duvetShellCenterY": -0.26,
+        "duvetShellDepth": 1.40,
+        "pillowLandingZoneIntent": "keep the head-side pillow region flatter and lower than the duvet crown"
     },
     "selectedSoftParts": {
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
