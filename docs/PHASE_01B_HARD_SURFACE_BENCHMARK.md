@@ -1,6 +1,6 @@
 # Phase 01B — Hard Surface Benchmark
 
-Status: **IN PROGRESS**
+Status: **CANDIDATE — MANUAL VISUAL ACCEPTANCE REQUIRED**
 Date: 2026-10-07
 
 ## Purpose
@@ -48,3 +48,27 @@ A continuous countertop is deliberately **not** part of the production module. R
 Phase 01B intentionally uses no mandatory third-party cabinet framework.
 
 Current external options were either too old for a dependable Blender 5.2 public CI baseline, ambiguously licensed, or broader than Dwelling needs. Their design ideas remain useful references.
+
+
+## Current benchmark result
+
+Kitchen Base 600 v0.2 passes the automated benchmark.
+
+Measured production contract:
+
+- installation footprint: 0.600 × 0.560 × 0.870 m;
+- full physical bounds including handle projection: 0.600 × 0.601 × 0.870 m;
+- floor offset: 0;
+- dimension error: 0;
+- mesh objects: 20.
+
+Runtime hierarchy validation confirms that GLB preserves:
+
+- `DoorPivot_L → Door_L + Handle_L`;
+- `DoorPivot_R → Door_R + Handle_R`.
+
+This makes the asset suitable for a future RealityKit interaction adapter without rebuilding hinge semantics from geometry heuristics.
+
+Automated status: **PASS**.
+
+Visual status: **CANDIDATE — user acceptance required**.
