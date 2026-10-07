@@ -68,7 +68,7 @@ def build_bed(location=(0, 0, 0), name_prefix="Bed001"):
         foot_start=-0.34,
         nx=43,
         ny=47,
-        thickness=0.040,
+        thickness=0.004,
         wrinkle=0.010,
     )
     objects.append(duvet)
@@ -107,7 +107,7 @@ def build_bed(location=(0, 0, 0), name_prefix="Bed001"):
         foot_start=-0.08,
         nx=39,
         ny=25,
-        thickness=0.030,
+        thickness=0.003,
         wrinkle=0.008,
         rotation=(0, 0, math.radians(1.2)),
     )
