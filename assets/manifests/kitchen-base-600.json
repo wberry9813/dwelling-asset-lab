@@ -6,6 +6,20 @@
   "frontAxis": "-Y",
   "nominalDimensionsMeters": [0.60, 0.601, 0.87],
   "purpose": "Phase 01B hard-surface mother asset benchmark; 600 mm kitchen base cabinet module",
+  "runtimeSemantics": {
+    "doorPivots": [
+      {
+        "pivot": "KitchenBase600_DoorPivot_L",
+        "door": "KitchenBase600_Door_L",
+        "handle": "KitchenBase600_Handle_L"
+      },
+      {
+        "pivot": "KitchenBase600_DoorPivot_R",
+        "door": "KitchenBase600_Door_R",
+        "handle": "KitchenBase600_Handle_R"
+      }
+    ]
+  },
   "license": {
     "geometry": "Dwelling",
     "externalMaterials": []
