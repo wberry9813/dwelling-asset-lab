@@ -1,6 +1,6 @@
 # Phase 01A — Mother Asset Benchmark
 
-Status: **IN PROGRESS**
+Status: **CANDIDATE — MANUAL VISUAL ACCEPTANCE REQUIRED**
 Date: 2026-10-07
 
 ## Scope
@@ -58,3 +58,17 @@ Visual acceptance requires manual review of the generated renders. If either ass
 ## Runtime note
 
 Current Dwelling RealityKit implementation is still evolving. Phase 01A may propose changes to runtime material, lighting, format or placement conventions when those changes improve the long-term asset system.
+
+
+## Current benchmark result
+
+Phase 01A v0.2 passes automated build and asset-contract validation.
+
+- Sofa 001 nominal: 2.16 × 0.91 × 0.91 m
+- Sofa 001 measured: 2.16 × 0.91 × 0.9044 m
+- Sofa floor offset: 0.001 m
+- Bed 001 nominal: 1.98 × 2.10 × 1.52 m
+- Bed 001 measured: 1.98 × 2.10 × 1.52 m
+- Bed floor offset: 0.000 m
+
+The v0.2 soft geometry is materially better than the initial rounded-box prototype. Automated PASS does not seal visual quality; user visual acceptance remains required before expanding the benchmark family.
