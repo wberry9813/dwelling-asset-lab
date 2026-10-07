@@ -323,30 +323,6 @@ bpy.ops.object.modifier_apply(modifier=subsurf.name)
 for poly in duvet_shell.data.polygons:
     poly.use_smooth = True
 
-# Folded-back top edge breaks the duvet into readable textile layers instead
-# of one inflated slab. This is authored soft geometry, not simulated thickness.
-def duvet_fold_deform(x, y, z, a, b, c):
-    nx = x / max(a, 1e-6)
-    center = max(0.0, 1.0 - nx * nx)
-    z += 0.010 * math.sin(3.2 * x + 0.35) * center
-    z -= 0.010 * abs(nx) ** 5
-    y += 0.008 * math.sin(4.1 * x - 0.2)
-    return x, y, z
-
-duvet_fold = superellipsoid(
-    "HybridBed_DuvetFoldBack",
-    (0, 0.34, 0.710),
-    (1.58, 0.27, 0.060),
-    duvet_linen,
-    n_xy=5.0,
-    n_z=3.0,
-    segments=72,
-    rings=28,
-    rotation=(math.radians(-3), 0, math.radians(-0.8)),
-    deform=duvet_fold_deform,
-)
-ensure_uv(duvet_fold)
-
 # ---------------------------------------------------------------------------
 # CC0 pillow normalization.
 # ---------------------------------------------------------------------------
@@ -380,7 +356,7 @@ setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.60, 0.690), 2)
 # conflicts with the cleaner Dwelling bedroom direction.
 bpy.data.objects.remove(accent_pillow, do_unlink=True)
 
-for textured_obj in (headboard_pad, sheet_layer, duvet_shell, duvet_fold, pillow_l, pillow_r):
+for textured_obj in (headboard_pad, sheet_layer, duvet_shell, pillow_l, pillow_r):
     ensure_uv(textured_obj)
     if not textured_obj.data.uv_layers:
         raise RuntimeError(f"Textured object missing UV map: {textured_obj.name}")
@@ -440,7 +416,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
 bed_objects = [
     frame, plinth, headboard, headboard_pad, mattress, sheet_layer,
-    duvet_loft, duvet_shell, duvet_fold, pillow_l, pillow_r,
+    duvet_loft, duvet_shell, pillow_l, pillow_r,
 ]
 bpy.ops.object.select_all(action="DESELECT")
 for o in bed_objects:
@@ -457,7 +433,7 @@ bpy.ops.export_scene.gltf(
 report = {
     "status": "pass",
     "source": metadata,
-    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + authored fold-back edge + normalized CC0 sleeping-pillow topology + CC0 linen PBR; accent pillow source probed but excluded",
+    "authoringMethod": "parametric hard structure + sculpted loft volume + Blender Cloth baked shell + normalized CC0 sleeping-pillow topology + CC0 linen PBR; accent pillow source probed but excluded",
     "simulation": {
         "frames": scene.frame_end,
         "grid": [53, 61],
