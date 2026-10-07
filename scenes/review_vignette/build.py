@@ -15,6 +15,10 @@ from blender.assets.bed_001 import build_bed
 OUT = os.path.join(ROOT, "build", "phase_01a")
 os.makedirs(OUT, exist_ok=True)
 
+REVIEW_MODE = os.environ.get("DWELLING_REVIEW_MODE", "hero").strip().lower()
+if REVIEW_MODE not in {"fast", "hero"}:
+    raise ValueError(f"Unsupported DWELLING_REVIEW_MODE: {REVIEW_MODE}")
+
 LIGHTING_PRESET = {
     "preset": "dwelling-warm-daylight-v0.1",
     "intent": "soft warm residential daylight with readable material separation",
@@ -51,8 +55,12 @@ def setup_review_shell():
 def setup_lighting_and_camera():
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE" if bpy.app.version >= (5, 0, 0) else "BLENDER_EEVEE_NEXT"
-    scene.render.resolution_x = 1280
-    scene.render.resolution_y = 960
+    if REVIEW_MODE == "fast":
+        scene.render.resolution_x = 768
+        scene.render.resolution_y = 576
+    else:
+        scene.render.resolution_x = 1280
+        scene.render.resolution_y = 960
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
 
@@ -149,7 +157,8 @@ def build_review(asset_kind):
     cam = setup_lighting_and_camera()
 
     render(f"preview-{basename}-3q.png", cam, three_quarter, camera_target, 58)
-    render(f"preview-{basename}-side.png", cam, side, camera_target, 62)
+    if REVIEW_MODE == "hero":
+        render(f"preview-{basename}-side.png", cam, side, camera_target, 62)
 
     return {
         "name": asset["name"],
@@ -187,16 +196,20 @@ required = [
     "bed-001.blend",
     "bed-001.glb",
     "preview-sofa-001-3q.png",
-    "preview-sofa-001-side.png",
     "preview-bed-001-3q.png",
-    "preview-bed-001-side.png",
     "lighting-preset-warm-daylight.json",
 ]
+if REVIEW_MODE == "hero":
+    required += [
+        "preview-sofa-001-side.png",
+        "preview-bed-001-side.png",
+    ]
 missing = [name for name in required if not os.path.exists(os.path.join(OUT, name)) or os.path.getsize(os.path.join(OUT, name)) == 0]
 
 report = {
     "phase": "01A",
     "benchmark": "mother-assets",
+    "review_mode": REVIEW_MODE,
     "style": "Warm Miniature Realism",
     "assets": [sofa_report, bed_report],
     "lighting_preset": LIGHTING_PRESET["preset"],
