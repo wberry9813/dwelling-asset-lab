@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: hybrid-bed-probe-${{ github.ref }}
+  group: hybrid-bed-probe-v2-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
