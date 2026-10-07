@@ -1,0 +1,16 @@
+{
+  "id": "sofa-001",
+  "sourceType": "generator",
+  "source": "blender/assets/sofa_001.py",
+  "authoringBlender": "5.2.2",
+  "frontAxis": "-Y",
+  "nominalDimensionsMeters": [2.16, 0.91, 0.91],
+  "purpose": "Phase 01A mother asset benchmark",
+  "license": {
+    "geometry": "Dwelling",
+    "externalMaterials": []
+  },
+  "export": {
+    "runtime": "glb"
+  }
+}
