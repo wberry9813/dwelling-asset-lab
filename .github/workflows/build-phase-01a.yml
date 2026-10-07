@@ -6,11 +6,15 @@ on:
     paths:
       - "blender/**"
       - "scenes/review_vignette/**"
+      - "assets/manifests/**"
+      - "tools/validate_asset_manifests.py"
       - ".github/workflows/build-phase-01a.yml"
   pull_request:
     paths:
       - "blender/**"
       - "scenes/review_vignette/**"
+      - "assets/manifests/**"
+      - "tools/validate_asset_manifests.py"
       - ".github/workflows/build-phase-01a.yml"
   workflow_dispatch:
     inputs:
@@ -40,6 +44,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate asset manifests
+        run: python3 tools/validate_asset_manifests.py
 
       - name: Install headless rendering libraries
         run: |
