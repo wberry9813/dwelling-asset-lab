@@ -135,6 +135,7 @@ report = {
     "version": asset["version"],
     "front_axis": asset["front_axis"],
     "module_width_m": asset["module_width_m"],
+    "installation_footprint_m": asset["installation_footprint_m"],
     "nominal_dimensions_m": nominal,
     "measured_bounds_m": bounds,
     "dimension_error_m": dimension_error,
