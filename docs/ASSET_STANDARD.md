@@ -71,3 +71,28 @@ Review walls, floors and background geometry are presentation context only. They
 ## Lighting portability
 
 Review lighting should be captured as semantic presets (intent, direction, softness, relative intensity and temperature) rather than baked directional light inside reusable furniture. Blender and RealityKit numeric values are implementation-specific; visual intent is the portable contract.
+
+
+### Installation footprint vs physical bounds
+
+For modular furniture, distinguish two measurements:
+
+- **installation footprint**: the canonical module space used for snapping/assembly;
+- **physical bounds**: the full rendered/collision envelope including handles, knobs, overhangs or other projections.
+
+Example: a 600 mm kitchen base cabinet may have a 600 × 560 mm installation footprint while its handle increases the physical depth beyond 560 mm.
+
+Do not silently substitute one for the other in runtime placement logic.
+
+### Runtime semantic hierarchy
+
+Interactive production assets should expose explicit semantic nodes when interaction depends on a mechanical relationship.
+
+Examples:
+
+- door pivot → door + handle;
+- drawer slide root → drawer front + box;
+- lamp pivot → shade;
+- articulated furniture root → moving part.
+
+For GLB/runtime delivery, CI should verify these node names and parent-child relationships survive export. Runtime code should consume declared semantics rather than infer hinges from mesh bounds.
