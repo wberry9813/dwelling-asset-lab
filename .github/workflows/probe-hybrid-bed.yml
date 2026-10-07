@@ -37,10 +37,12 @@ jobs:
 
       - name: Fetch CC0 linen PBR
         run: |
-          python3 tools/fetch_polyhaven_texture.py rough_linen --out build/hybrid_bed_probe/textures
+          python3 tools/fetch_polyhaven_texture.py rough_linen --out build/hybrid_bed_probe/textures --expected-files-hash 4e637f8a844f5100c96dc1b33d4d63fd7309797a
           test -s build/hybrid_bed_probe/textures/diffuse.jpg || test -s build/hybrid_bed_probe/textures/diffuse.png
           test -s build/hybrid_bed_probe/textures/normal.jpg || test -s build/hybrid_bed_probe/textures/normal.png
           test -s build/hybrid_bed_probe/textures/roughness.jpg || test -s build/hybrid_bed_probe/textures/roughness.png
+          echo "04897d7611d7390ddf5b2c6f7273f448dfc48341fdbd1f4f207fa30b331d7f57  build/hybrid_bed_probe/textures/diffuse.jpg" | sha256sum -c -
+          echo "e2402166d1a489f7414814e69e1836ab672aa24e30bec2d41fea356f81687e53  build/hybrid_bed_probe/textures/normal.jpg" | sha256sum -c -
 
       - name: Install headless rendering libraries
         run: |
