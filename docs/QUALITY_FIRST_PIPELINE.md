@@ -304,3 +304,24 @@ editable source
 Re-running an expensive cloth solve in every release build is discouraged unless the asset is intentionally parameterized by simulation and reproducibility has been proven.
 
 This keeps CI deterministic and fast while preserving high-quality authored drape.
+
+
+## External asset promotion gate
+
+External CC0 or otherwise permitted assets are never production assets merely because they can be downloaded.
+
+Promotion path:
+
+```text
+external source
+→ probe
+→ inspect geometry/materials/license
+→ normalize to Dwelling scale/orientation/pivot
+→ remove unwanted style-specific parts/dependencies
+→ assign Dwelling-compatible materials
+→ visual review
+→ approved stable .blend source
+→ runtime export
+```
+
+Release builds should consume the approved normalized source, not an unreviewed live-library asset. Live APIs are appropriate for discovery/probes; production inputs should be version-pinned and provenance-recorded.
