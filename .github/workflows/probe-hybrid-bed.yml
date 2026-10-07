@@ -8,6 +8,7 @@ on:
       - ".github/workflows/probe-hybrid-bed.yml"
       - "tools/fetch_polyhaven_asset.py"
       - "tools/fetch_polyhaven_texture.py"
+      - "tools/validate_glb.py"
   workflow_dispatch:
 
 concurrency:
@@ -43,6 +44,7 @@ jobs:
           test -s build/hybrid_bed_probe/textures/roughness.jpg || test -s build/hybrid_bed_probe/textures/roughness.png
           echo "04897d7611d7390ddf5b2c6f7273f448dfc48341fdbd1f4f207fa30b331d7f57  build/hybrid_bed_probe/textures/diffuse.jpg" | sha256sum -c -
           echo "e2402166d1a489f7414814e69e1836ab672aa24e30bec2d41fea356f81687e53  build/hybrid_bed_probe/textures/normal.jpg" | sha256sum -c -
+          echo "734ad6718841a6e296aacaa6e9ee2e1686eed5f62bb8d71c915c5605e162bcb4  build/hybrid_bed_probe/textures/roughness.jpg" | sha256sum -c -
 
       - name: Install headless rendering libraries
         run: |
@@ -73,6 +75,10 @@ jobs:
           test -s build/hybrid_bed_probe/result/hybrid-bed-prototype.blend
           test -s build/hybrid_bed_probe/result/hybrid-bed-prototype.glb
           test -s build/hybrid_bed_probe/result/hybrid-bed-report.json
+
+      - name: Validate runtime GLB material mapping
+        run: |
+          python3 tools/validate_glb.py             build/hybrid_bed_probe/result/hybrid-bed-prototype.glb             --require-textures             --report build/hybrid_bed_probe/result/glb-validation.json
 
       - name: Upload hybrid bed probe
         uses: actions/upload-artifact@v4
