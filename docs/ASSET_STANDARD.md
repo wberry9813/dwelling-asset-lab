@@ -35,3 +35,39 @@ Every benchmark scene should provide at least:
 - runtime GLB.
 
 Additional close-ups and turntables will be added after the baseline pipeline is proven.
+
+
+## Placement contract
+
+Mother and production assets must use an explicit placement contract.
+
+Current Phase 01 convention:
+
+- Blender authoring axes: local X = width, local Y = depth, local Z = height.
+- Canonical asset front = local -Y.
+- World origin lies on the asset's floor-contact plane.
+- The asset is centered around X/Y zero unless its placement semantics require another documented pivot.
+- Nominal dimensions are metadata and must be checked against measured geometry bounds.
+- Phase 01A benchmark tolerance is 0.03 m per dimension and 0.015 m for floor contact. Production tolerances may be tightened after runtime integration evidence.
+
+Runtime systems such as RealityKit may use different axis semantics. Mapping belongs at the asset/runtime adapter boundary; do not silently change the authoring convention per asset.
+
+## Modeling method
+
+The pipeline is automation-first, not primitive-only.
+
+Choose the modeling technique that best preserves quality and reuse:
+
+- hard-surface and modular assets: prefer dimensions, reusable generators and deterministic procedural construction;
+- upholstery and soft goods: procedural base meshes may be combined with subdivision, deformation, cloth simulation or other Blender-native modifiers;
+- hero assets may use curated source geometry when pure procedural generation would visibly reduce quality.
+
+The invariant is reproducibility of validation/export/review, not that every vertex must be produced by a simple Python primitive.
+
+## Review shell boundary
+
+Review walls, floors and background geometry are presentation context only. They must remain visually subordinate and must not become accidental production architecture.
+
+## Lighting portability
+
+Review lighting should be captured as semantic presets (intent, direction, softness, relative intensity and temperature) rather than baked directional light inside reusable furniture. Blender and RealityKit numeric values are implementation-specific; visual intent is the portable contract.
