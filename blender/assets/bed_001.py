@@ -48,7 +48,7 @@ def build_bed(location=(0, 0, 0), name_prefix="Bed001"):
 
     # Hard structure.
     box("Frame", (0, 0.00, 0.23), (1.96, 2.10, 0.28), oak, 0.045, 5)
-    box("ShadowPlinth", (0, 0.02, 0.115), (1.68, 1.82, 0.08), shadow, 0.016, 3)
+    box("ShadowPlinth", (0, 0.02, 0.040), (1.68, 1.82, 0.08), shadow, 0.016, 3)
     box("Headboard", (0, 0.99, 0.84), (1.98, 0.12, 1.36), oak, 0.045, 5)
 
     # Mattress retains a stable geometric footprint; textile layers above it
