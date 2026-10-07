@@ -63,6 +63,12 @@ surface_candidates = [
     and size_of(p)[1] > 0.5
     and size_of(p)[2] < 0.35
 ]
+drape_candidates = [
+    p for p in parts
+    if size_of(p)[0] > 1.5
+    and size_of(p)[1] < 0.35
+    and size_of(p)[2] > 0.45
+]
 pillow_candidates = [
     p for p in parts
     if 0.5 < size_of(p)[0] < 1.0
@@ -70,14 +76,15 @@ pillow_candidates = [
     and 0.18 < size_of(p)[2] < 0.45
 ]
 
-if not surface_candidates or not pillow_candidates:
+if not surface_candidates or not drape_candidates or not pillow_candidates:
     raise RuntimeError(
-        f"Unable to classify reference soft parts: surfaces={len(surface_candidates)} pillows={len(pillow_candidates)}"
+        "Unable to classify reference soft parts: "
+        f"surfaces={len(surface_candidates)} drapes={len(drape_candidates)} pillows={len(pillow_candidates)}"
     )
 
-# Prefer the more detailed wide soft surface.
+# Use the actual vertically draped quilt island rather than the seat cushion.
 duvet_src = sorted(
-    surface_candidates,
+    drape_candidates,
     key=lambda o: len(o.data.polygons),
     reverse=True,
 )[0]
@@ -122,7 +129,7 @@ plinth = rounded_box("HybridBed_Plith", (0, 0.02, 0.050), (1.72, 1.84, 0.10), sh
 headboard = rounded_box("HybridBed_HeadboardBack", (0, 0.995, 0.79), (1.98, 0.10, 1.22), oak, 0.040, 5)
 headboard_pad = rounded_box("HybridBed_HeadboardPad", (0, 0.925, 0.87), (1.82, 0.08, 0.80), linen, 0.080, 8)
 mattress = rounded_box("HybridBed_Mattress", (0, -0.03, 0.43), (1.84, 1.92, 0.24), mattress_mat, 0.085, 8)
-sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.558), (1.80, 1.88, 0.020), sheet, 0.016, 5)
+sheet_layer = rounded_box("HybridBed_FittedSheet", (0, -0.04, 0.554), (1.80, 1.88, 0.012), sheet, 0.009, 4)
 
 # ---------------------------------------------------------------------------
 # Reuse only the CC0 soft geometry, normalized into the modern bed.
@@ -134,14 +141,19 @@ for obj in (duvet, pillow_l, pillow_r):
     for poly in obj.data.polygons:
         poly.use_smooth = True
 
-duvet.name = "HybridBed_Duvet_CC0Base"
-duvet.dimensions = (1.76, 1.40, 0.095)
-bpy.context.view_layer.objects.active = duvet
+duvet.name = "HybridBed_Duvet_CC0DrapedBase"
+# The source quilt hangs vertically over the day-bed back. Rotate that authored
+# drape into a horizontal bedding orientation, then normalize dimensions.
+bpy.ops.object.select_all(action="DESELECT")
 duvet.select_set(True)
+bpy.context.view_layer.objects.active = duvet
+duvet.rotation_euler = (math.radians(90), 0, 0)
+bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+duvet.dimensions = (1.76, 1.42, 0.060)
 bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 duvet.select_set(False)
-duvet.location = (0.0, -0.25, 0.650)
-duvet.rotation_euler = (math.radians(1.0), 0, math.radians(-0.7))
+duvet.location = (0.0, -0.23, 0.630)
+duvet.rotation_euler = (math.radians(0.8), 0, math.radians(-0.6))
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
@@ -232,6 +244,7 @@ report = {
     "source": metadata,
     "selectedSoftParts": {
         "duvetSourcePolygons": duvet_source_polygons,
+        "duvetSourceKind": "Poly Haven draped quilt loose part",
         "pillowSourceDimensionsBeforeNormalize": pillow_source_dimensions,
     },
     "prototype": {
