@@ -285,3 +285,22 @@ Blender Asset Browser on artist / review machines
 Use this as a browsing/distribution layer for approved Blender assets, not as an unpinned dependency for release builds.
 
 Authoring sources may keep external dependencies while being edited, but a published remote-library asset must be self-contained according to Blender's remote-library requirements.
+
+
+## Simulation policy
+
+Cloth and other physics are primarily **authoring tools**, not mandatory release-build steps.
+
+Recommended flow:
+
+```text
+editable source
+→ cloth / deformation / sculpt exploration
+→ visual acceptance
+→ bake / apply approved result to stable source mesh
+→ CI normalization + validation + export
+```
+
+Re-running an expensive cloth solve in every release build is discouraged unless the asset is intentionally parameterized by simulation and reproducibility has been proven.
+
+This keeps CI deterministic and fast while preserving high-quality authored drape.
