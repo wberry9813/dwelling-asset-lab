@@ -6,8 +6,8 @@ on:
     paths:
       - "blender/**"
       - "scenes/review_vignette/**"
-      - "assets/manifests/**"
-      - "tools/validate_asset_manifests.py"
+      - "assets/manifests/sofa-001.json"
+      - "assets/manifests/bed-001.json"
       - ".github/workflows/build-phase-01a.yml"
   pull_request:
     paths:
