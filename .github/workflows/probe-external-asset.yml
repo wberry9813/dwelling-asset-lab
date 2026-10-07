@@ -12,7 +12,7 @@ on:
       asset_id:
         description: Poly Haven asset id
         required: true
-        default: vintage_day_bed
+        default: throw_pillows_01
         type: string
 
 concurrency:
@@ -29,7 +29,7 @@ jobs:
     env:
       BLENDER_VERSION: "5.2.2"
       BLENDER_DIR: "blender-5.2.2-linux-x64"
-      POLYHAVEN_ASSET_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.asset_id || 'vintage_day_bed' }}
+      POLYHAVEN_ASSET_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.asset_id || 'throw_pillows_01' }}
 
     steps:
       - uses: actions/checkout@v4
