@@ -37,3 +37,8 @@ Generated binary assets are build artifacts, not committed source files.
 ## Current phase
 
 See [Phase 01 — Production Direction & Benchmark Strategy](docs/PHASE_01_PRODUCTION_DIRECTION.md) for the current production boundary, benchmark strategy, lighting approach and asset sequencing.
+
+
+### Active benchmark
+
+[Phase 01A — Mother Asset Benchmark](docs/PHASE_01A_MOTHER_ASSET_BENCHMARK.md) builds Sofa 001 and Bed 001 in a shared neutral review vignette.
