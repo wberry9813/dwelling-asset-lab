@@ -24,7 +24,13 @@ jobs:
           echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
 
       - name: Build, validate and render
-        run: blender --background --python scenes/apartment_001/build.py
+        run: |
+          set -o pipefail
+          blender --background --python-exit-code 1 --python scenes/apartment_001/build.py
+          test -s build/dwelling-apartment-001.blend
+          test -s build/dwelling-apartment-001.glb
+          test -s build/preview-isometric.png
+          test -s build/validation.json
 
       - name: Show validation report
         run: cat build/validation.json
