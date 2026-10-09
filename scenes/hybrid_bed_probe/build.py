@@ -336,20 +336,20 @@ for obj in (pillow_l, pillow_r):
 
 def setup_pillow(obj, name, loc, rot_z):
     obj.name = name
-    obj.dimensions = (0.68, 0.44, 0.16)
+    obj.dimensions = (0.68, 0.42, 0.135)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     obj.location = loc
     obj.rotation_euler = (
-        math.radians(3),
-        math.radians(2 if loc[0] < 0 else -2),
+        0.0,
+        0.0,
         math.radians(rot_z),
     )
 
-setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.36, 0.69, 0.665), -2)
-setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.68, 0.670), 2)
+setup_pillow(pillow_l, "HybridBed_Pillow_L_CC0Base", (-0.36, 0.72, 0.622), -1.5)
+setup_pillow(pillow_r, "HybridBed_Pillow_R_CC0Base", (0.36, 0.71, 0.625), 1.5)
 
 # Dedicated accent-pillow source was probed successfully, but is intentionally
 # excluded from this bed composition because its crumpled decorative silhouette
@@ -442,8 +442,10 @@ report = {
     "beddingLayout": {
         "frontAxis": "-Y",
         "headDirection": "+Y",
-        "pillowPitchDegreesX": 3.0,
-        "pillowCentersY": [0.69, 0.68],
+        "pillowPitchDegreesX": 0.0,
+        "pillowCentersY": [0.72, 0.71],
+        "pillowCenterZ": [0.622, 0.625],
+        "pillowDimensionsMeters": [0.68, 0.42, 0.135],
         "duvetLoftCenterY": -0.32,
         "duvetLoftDepth": 1.10,
         "duvetShellCenterY": -0.27,
